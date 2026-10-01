@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { SUBJ, LV, ACC_TEXT, OPP, AIL, SP, SPN, SPI, cur, buildGame, doRoll, resolve } from './engine'
 import { createRoom, joinRoom, localRoom } from './online'
+import { unlock, setBgm, setSe, setMood, sfx, isBgm, isSe } from './audio'
 import './App.css'
 
 const MENU = [
@@ -74,22 +75,67 @@ function Rules({ M }) {
   )
 }
 
-// 野球のダイヤモンド（走者・塁・イベントのアニメーション）
+// 野球のダイヤモンド（芝の縞模様・走者・結果の演出）
 function Diamond({ bases, ev, n, show }) {
   const P = [[160, 92, '一塁'], [100, 34, '二塁'], [40, 92, '三塁']]
-  const sq = (x, y, on, k) => <rect key={k} x={x - 11} y={y - 11} width="22" height="22" transform={`rotate(45 ${x} ${y})`} className={'base' + (on ? ' on' : '')} />
+  const hr = show && ev && ev.includes('ホームラン')
   return (
     <div className="dia">
-      <svg viewBox="0 0 200 175" width="100%">
-        <polygon points="100,150 160,92 100,34 40,92" className="field" />
+      <svg viewBox="0 0 200 178" width="100%">
+        <defs>
+          <pattern id="mow" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="10" height="20" fill="#1f7a43" /><rect x="10" width="10" height="20" fill="#18683a" />
+          </pattern>
+        </defs>
+        <path d="M100 168 L4 82 Q100 -52 196 82 Z" fill="url(#mow)" stroke="#e9f5ec" strokeWidth="2" />
+        <polygon points="100,150 160,92 100,34 40,92" fill="#b98350" />
+        <polygon points="100,128 138,92 100,56 62,92" fill="#1d6e3d" />
+        <circle cx="100" cy="92" r="6" fill="#c99a63" />
         {P.map(([x, y, t], i) => (
-          <g key={i}>{sq(x, y, bases[i], i)}<text className="lbl" x={x} y={y + (i === 1 ? -18 : 28)}>{t}</text>
-            {bases[i] ? <text key={n + '-' + i} className="run" x={x} y={y + 7}>🏃</text> : null}</g>
+          <g key={i}>
+            <rect x={x - 10} y={y - 10} width="20" height="20" transform={`rotate(45 ${x} ${y})`} className={'base' + (bases[i] ? ' on' : '')} />
+            <text className="lbl" x={x} y={y + (i === 1 ? -17 : 27)}>{t}</text>
+            {bases[i] ? <text key={n + '-' + i} className="run" x={x} y={y + 7}>🏃</text> : null}
+          </g>
         ))}
-        <path d="M92 150 L108 150 L108 158 L100 164 L92 158 Z" fill="var(--card)" stroke="var(--ac)" strokeWidth="3" />
-        <text className="lbl" x="100" y="174">ホーム</text>
+        <path d="M92 150 L108 150 L108 157 L100 163 L92 157 Z" fill="#fff" />
+        <text className="lbl" x="100" y="176">ホーム</text>
       </svg>
       {show && ev ? <div key={n} className="pop">{ev}</div> : null}
+      {hr ? <div key={'fw' + n} className="fw">{Array.from({ length: 16 }, (_, i) => <b key={i} style={{ '--a': i * 22.5 + 'deg', '--h': i * 22 }} />)}</div> : null}
+    </div>
+  )
+}
+
+// さいころ（目の数だけ点が並び、振るたびに転がるアニメーション）
+const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] }
+function Die({ v, red }) {
+  return <div className={'die' + (red ? ' red' : '')}>{Array.from({ length: 9 }, (_, i) => <i key={i} className={PIPS[v].includes(i) ? 'pip' : ''} />)}</div>
+}
+
+// ナイター風のスコアボード（イニングごとの得点）
+function Scoreboard({ S, T, end }) {
+  const cols = Array.from({ length: S.N }, (_, i) => i)
+  const val = (t, i) => {
+    const v = S.line && S.line[t] ? S.line[t][i] : null
+    if (v != null) return v
+    if (i < S.inn - 1) return 0
+    if (i === S.inn - 1) return t < S.half || (t === S.half && !end) ? 0 : ''
+    return ''
+  }
+  return (
+    <div className="board">
+      <table>
+        <thead><tr><th></th>{cols.map((i) => <th key={i}>{i + 1}</th>)}<th>計</th></tr></thead>
+        <tbody>{[0, 1].map((t) => (
+          <tr key={t}>
+            <td className="nm">{!end && S.half === t ? '🏏' : ''}{T[t].name}</td>
+            {cols.map((i) => <td key={i} className={!end && i === S.inn - 1 && t === S.half ? 'cur' : ''}>{val(t, i)}</td>)}
+            <td className="tot">{S.sc[t]}</td>
+          </tr>
+        ))}</tbody>
+      </table>
+      <div className="lamps">OUT {[0, 1, 2].map((i) => <i key={i} className={'lamp' + (i < S.outs ? ' on' : '')} />)}</div>
     </div>
   )
 }
@@ -129,8 +175,29 @@ function Game({ doc, api, me, onLeave }) {
   const canRoll = isBat || (!human(bat) && myT === o && hasHuman)
   const duel = S.ph === 'duel' && c && c.pr
   const remain = duel ? Math.max(0, Math.ceil(c.lim - (now - c.t0) / 1000)) : null
+  const tense = duel && remain <= 10
 
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t) }, [])
+
+  // 効果音とBGMの切り替え
+  useEffect(() => {
+    if (!S.n) return
+    const m = S.msg || '', ev = S.ev || ''
+    const a = m.includes('⭕') ? 'ok' : m.includes('❌') || m.includes('時間切れ') ? 'ng' : null
+    if (a) sfx(a)
+    const b = ev.includes('ホームラン') ? 'hr' : /単打|二塁打|三塁打/.test(ev) ? 'hit' : 'out'
+    const t1 = setTimeout(() => sfx(b), a ? 260 : 0)
+    const t2 = ev.includes('チェンジ') ? setTimeout(() => sfx('change'), 1100) : null
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [S.n]) // eslint-disable-line
+  useEffect(() => { if (S.ph === 'duel') sfx('dice') }, [S.ph, S.n]) // eslint-disable-line
+  useEffect(() => { if (remain !== null && remain > 0 && remain <= 5) sfx('tick') }, [remain])
+  useEffect(() => { setMood(tense ? 'tense' : 'play') }, [tense])
+  useEffect(() => {
+    if (S.ph !== 'end') return
+    const w = S.sc[0] > S.sc[1] ? 0 : S.sc[1] > S.sc[0] ? 1 : -1
+    sfx(w >= 0 && w === myT ? 'win' : 'out')
+  }, [S.ph]) // eslint-disable-line
 
   // 部屋を作った人（ひとりで遊ぶ時は自分）の端末が、AIの動きと時間切れを担当する
   useEffect(() => {
@@ -175,19 +242,14 @@ function Game({ doc, api, me, onLeave }) {
   return (
     <div>
       {!end && <div className={'ban ' + banner[0]}>{banner[1]}</div>}
+      <Scoreboard S={S} T={T} end={end} />
       <div className="card">
-        <div className="sc">
-          <span>{!end && o === 0 ? '🏏' : ''}{T[0].name} {S.sc[0]}</span>
-          <span>{Math.min(S.inn, S.N)}回{S.half ? '裏' : '表'}</span>
-          <span>{S.sc[1]} {T[1].name}{!end && o === 1 ? '🏏' : ''}</span>
-        </div>
         <Diamond bases={S.bases} ev={S.ev} n={S.n} show={S.ph === 'roll' && S.n > 0} />
-        <div>ランナー：{runners}　アウト：{'●'.repeat(S.outs)}{'○'.repeat(3 - S.outs)}</div>
-        <div className="mut">{SUBJ[S.M].n}・AI：{LV[S.lv]}</div>
+        <div className="mut" style={{ textAlign: 'center' }}>ランナー：{runners}　｜　{SUBJ[S.M].n}・AI：{LV[S.lv]}</div>
       </div>
       {S.msg && <div className="card msg">{S.msg}</div>}
       {end ? (
-        <div className="card"><div className="big">{S.sc[0] > S.sc[1] ? T[0].name + ' の勝ち！' : S.sc[1] > S.sc[0] ? T[1].name + ' の勝ち！' : '引き分け'}</div><button onClick={onLeave}>最初に戻る</button></div>
+        <div className="card"><div className="chalk">{S.sc[0] > S.sc[1] ? T[0].name + ' の勝ち！' : S.sc[1] > S.sc[0] ? T[1].name + ' の勝ち！' : '引き分け'}</div><button onClick={onLeave}>最初に戻る</button></div>
       ) : (
         <div className="card">
           {myNames.length > 0 && <p className="mut">あなた：{myNames.length > 1 ? `${T[myT].name}の全員（${myNames.join('・')}）を操作` : `${myNames[0]}（${T[myT].name}）`}</p>}
@@ -196,7 +258,10 @@ function Game({ doc, api, me, onLeave }) {
             ? <button onClick={() => api.write(doRoll(S))}>🎲 さいころを振る</button>
             : <p className="mut">{bat}のさいころを待っています…</p>) : (
             <>
-              <div className="dice">🎲{c.p}　🎲{c.b}</div>
+              <div className="dice" key={S.n}>
+                <div className="dw"><Die v={c.p} />ピッチャー</div>
+                <div className="dw"><Die v={c.b} red />バッター</div>
+              </div>
               {c.sp && <p><b>スペシャル！ {SPN[c.sp]}</b></p>}
               <p>打者：<b>{bat}</b> ／ 相手：<b>{c.opp}</b>（{c.role}）</p>
               {!(isBat || isOpp) ? <p className="mut">観戦中：{bat} vs {c.opp}</p>
@@ -212,9 +277,9 @@ function Game({ doc, api, me, onLeave }) {
                     <div className={'timer' + (remain <= 5 ? ' warn' : '')}>⏱ 残り {remain} 秒</div>
                     <div className={'tbar' + (remain <= 5 ? ' warn' : '')}><div style={{ width: Math.min(100, (remain / c.lim) * 100) + '%' }} /></div>
                     <p className="mut">{SUBJ[S.M].t[c.p]}・{SUBJ[S.M].d[Math.ceil(c.b / 2) - 1]}｜早い者勝ち！（{isBat ? 'あなたは打者側' : 'あなたは相手役'}）</p>
-                    <div className="big">{c.pr.q}{!c.pr.ch && (S.M === 'S') ? ' ＝ ？' : ''}</div>
+                    <div className="chalk">{c.pr.q}{!c.pr.ch && S.M === 'S' ? ' ＝ ？' : ''}</div>
                     {c.pr.ch
-                      ? c.pr.ch.map((t, i) => <button key={i} className="sub ch" onClick={() => answer(i === c.pr.a)}>{'ABCD'[i]}. {t}</button>)
+                      ? c.pr.ch.map((t, i) => <button key={i} className="ch" onClick={() => answer(i === c.pr.a)}>{'ABCD'[i]}. {t}</button>)
                       : <><input inputMode="numeric" value={ans} onChange={(e) => setAns(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} /><button onClick={submit}>回答</button></>}
                   </>
                 )}
@@ -232,6 +297,7 @@ export default function App() {
   const [name, setName] = useState(localStorage.getItem('bm-name') || '')
   const [M, setM] = useState(localStorage.getItem('bm-M') || 'S'), [N, setN] = useState(3), [lv, setLv] = useState(2), [code, setCode] = useState('')
   const [api, setApi] = useState(null), [doc, setDoc] = useState(null), [err, setErr] = useState('')
+  const [bgm, setB] = useState(isBgm()), [se, setS] = useState(isSe())
   const m = `${M}.${lv}`
   const cat = Math.max(0, MENU.findIndex(([, l]) => l.some(([k]) => k === M)))
   const pick = (k) => { setM(k); localStorage.setItem('bm-M', k) }
@@ -239,10 +305,14 @@ export default function App() {
   useEffect(() => { if (!api) return; return api.subscribe(setDoc) }, [api])
 
   const enter = async (make) => {
+    unlock()
     const nm = name.trim().slice(0, 12)
     if (!nm) return setErr('名前を入力してください')
     localStorage.setItem('bm-name', nm); setErr('')
-    try { setApi(await make(nm)) } catch (e) { setErr(e.message || '失敗しました') }
+    try { setApi(await make(nm)) } catch (e) {
+      const msg = e.message || ''
+      setErr(/Invalid path/i.test(msg) ? '接続先のURL設定が正しくありません（VITE_SUPABASE_URL を確認してください）' : msg || '失敗しました')
+    }
   }
   // ひとりで遊ぶ：自分のチーム4人を全員自分が操作し、相手チームはAI
   const solo = () => enter(async (nm) => {
@@ -255,13 +325,19 @@ export default function App() {
 
   return (
     <main>
-      <h1>⚾ 野球×計算バトル</h1>
+      <div className="hd">
+        <h1><span className="neon">BASEBALL</span><span className="neon2">× 計算バトル ⚾ ナイトゲーム</span></h1>
+        <div className="aud">
+          <button className="ic" title="BGM" onClick={() => { unlock(); const v = !bgm; setBgm(v); setB(v) }}>{bgm ? '🎵' : '🔇'}</button>
+          <button className="ic" title="効果音" onClick={() => { unlock(); const v = !se; setSe(v); setS(v) }}>{se ? '🔊' : '🔈'}</button>
+        </div>
+      </div>
       {!api ? (
         <>
           <div className="card">
             <input placeholder="あなたの名前" value={name} onChange={(e) => setName(e.target.value)} />
-            <div className="chips">{MENU.map(([name, l], i) => <button key={name} className={'chip' + (i === cat ? ' on' : '')} onClick={() => pick(l[0][0])}>{name}</button>)}</div>
-            <div className="chips">{MENU[cat][1].map(([k, name]) => <button key={k} className={'chip' + (k === M ? ' on' : '')} onClick={() => pick(k)}>{name}</button>)}</div>
+            <div className="chips">{MENU.map(([n, l], i) => <button key={n} className={'chip' + (i === cat ? ' on' : '')} onClick={() => pick(l[0][0])}>{n}</button>)}</div>
+            <div className="chips">{MENU[cat][1].map(([k, n]) => <button key={k} className={'chip' + (k === M ? ' on' : '')} onClick={() => pick(k)}>{n}</button>)}</div>
             <p className="mut">選択中：<b>{SUBJ[M].n}</b></p>
             <div className="row">
               <select value={lv} onChange={(e) => setLv(+e.target.value)}>{[1, 2, 3, 4, 5].map((l) => <option key={l} value={l}>AI：{LV[l]}</option>)}</select>
@@ -272,7 +348,7 @@ export default function App() {
             <p className="mut">科目・AIレベル・イニング数は、部屋を作る人の設定になります。</p>
             <input inputMode="numeric" placeholder="部屋コード（4桁）" value={code} onChange={(e) => setCode(e.target.value)} />
             <button className="sub" onClick={() => enter((nm) => joinRoom(code.trim(), me, nm))}>部屋に入る</button>
-            {err && <p style={{ color: '#c2410c' }}>{err}</p>}
+            {err && <p style={{ color: '#ff8a8a' }}>{err}</p>}
           </div>
           <Rules M={M} />
         </>
