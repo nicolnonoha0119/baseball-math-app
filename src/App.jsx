@@ -225,7 +225,7 @@ export default function App() {
 
   return (
     <main>
-      <h1>⚾ 野球×計算バトル</h1>
+      <h1>⚾ 野球×勉強バトル</h1>
       {!api ? (
         <>
           <div className="card">
