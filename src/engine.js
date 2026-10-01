@@ -622,6 +622,7 @@ function adv(S, n) {
 export function resolve(S0, win, pre) {
   const S = structuredClone(S0), { o, bat } = cur(S), c = S.cur
   S.line = S.line || [[], []]
+  S.hold = !!(S.who && (S.who[bat] || (c && S.who[c.opp]))) // 人間が関わった打席は、結果を読めるように自動で次へ進めない
   let m = pre ? pre + ' ' : ''
   if (c.pr) m += `【問題：${c.pr.q}／答え：${ansText(c.pr)}】\n解説：${c.pr.e}\n`
   if (win) {
