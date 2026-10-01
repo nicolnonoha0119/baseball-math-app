@@ -19,12 +19,13 @@ export const SUBJ = {
   CH: { n: '化学計算（理論化学）', t: ['', '物質量', '気体の体積', 'モル濃度', '化学反応式の量', '質量パーセント濃度', 'ランダム'], d: DIF },
   K: { n: '古文単語', t: wt('古語→意味', '意味→古語'), d: ['易', '標準', '難'] },
   KJ: { n: '漢字の読み（入試頻出）', t: wt('漢字→読み', '読み→漢字'), d: ['易', '標準', '難'] },
-  JH: { n: '日本史 一問一答', t: ['', '古代・中世', '近世', '近代', 'ランダム', 'ランダム', 'ランダム'], d: DIF },
-  G: { n: '高校英文法', t: ['', '時制', '関係詞・接続詞', '助動詞・仮定法', '前置詞・語法', 'ランダム', 'ランダム'], d: DIF },
+  JH: { n: '日本史 一問一答', t: ['', '古代・中世', '近世', '近代・現代', 'ランダム', 'ランダム', 'ランダム'], d: DIF },
+  G: { n: '高校英文法', t: ['', '時制・動詞の活用', '関係詞・接続詞', '助動詞・仮定法', '前置詞・語法・動詞の形', 'ランダム', 'ランダム'], d: DIF },
 }
 // 大学レベル別の科目：ピッチャーの目ごとに（科目, 問題の種類）を割り当て、バッターの目に shift を足して難しくする
 // ※レベルはあくまで目安で、実際の入試の出題と一致するわけではありません
 const MIX = (n, shift, pool, mc) => ({ n, shift, pool, mc, d: ['易', '標準', '難'], t: [] })
+SUBJ.S.t = ['', '掛け算', '見取算（加減算）', '割り算', '開平・立方根', '2乗・3乗', 'ランダム']
 SUBJ.U1 = MIX('数学 共通テストレベル', 0, [['H', 1], ['H', 2], ['H', 3], ['H', 4], ['A', 1], ['A', 5]])
 SUBJ.U2 = MIX('数学 MARCH・関関同立レベル', 1, [['H', 1], ['H', 5], ['H', 4], ['A', 2], ['A', 4], ['III', 1]])
 SUBJ.U3 = MIX('数学 早慶・旧帝大レベル', 2, [['III', 2], ['III', 3], ['H', 4], ['A', 3], ['H', 2], ['III', 4]])
@@ -43,12 +44,12 @@ export const SPN = { j: '✊ じゃんけん勝負', w: '🏳 不戦勝（自動
 export const SPI = { j: '✊', w: '🏳', l: '💀', b: '🎲' }
 const BONUS = [0, 1, 1, 2, 2, 3, 4], BN = ['', '単打', '単打', '二塁打', '二塁打', '三塁打', 'ホームラン']
 const SB = { 2: '₂', 3: '₃', 5: '₅', 6: '₆', 7: '₇', 10: '₁₀' }
- 
+
 export const rd = (n) => 1 + Math.floor(Math.random() * n)
 const rnd = (d) => { const lo = d <= 1 ? 1 : 10 ** (d - 1), hi = 10 ** Math.max(d, 1) - 1; return lo + Math.floor(Math.random() * (hi - lo + 1)) }
 const sg = (n, v = '') => (n < 0 ? '－ ' : '＋ ') + (Math.abs(n) === 1 && v ? '' : Math.abs(n)) + v
 const shuf = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] } return a }
- 
+
 // ---------- そろばん ----------
 function genS(op, d) {
   if (op === 1) { const a = rnd(d), b = rnd(2); return { q: `${a} × ${b}`, a: a * b, e: `${a}×${b}＝${a * b}` } }
@@ -170,7 +171,7 @@ const PR = { K: ['の意味は？', 'にあたる古語は？'], KJ: ['の読み
 function genW(M, op, L) {
   const bank = WB[M], th = bank.length / 3, pool = bank.slice(Math.floor((L - 1) * th), Math.floor(L * th))
   const w = pool[rd(pool.length) - 1], toJa = op % 2 === 1, i = toJa ? 0 : 1
-  const others = shuf(bank.filter((x) => x !== w)).slice(0, 3).map((x) => x[1 - i])
+  const others = shuf(bank.filter((x) => x !== w && x[1 - i] !== w[1 - i])).slice(0, 3).map((x) => x[1 - i])
   const ch = shuf([w[1 - i], ...others])
   const pr = PR[M] || ['の意味は？', 'を表す英単語は？']
   return { q: toJa ? `「${w[0]}」${pr[0]}` : `「${w[1]}」${pr[1]}`, ch, a: ch.indexOf(w[1 - i]), e: `${w[0]}＝${w[1]}` }
@@ -195,12 +196,14 @@ const GB = [
   [1, 2, 'I ( ) him for ten years when he moved away.', 'know|knew|had known|have known', 2, '引っ越した過去より前から続く → 過去完了 had known'],
 ]
 function genG(op, L) {
+  if (op === 1 && rd(2) === 1) return genIrr(L)
+  if (op === 4 && rd(3) === 1) return genToIng(L)
   let l = GB.filter((x) => x[0] === op && x[1] === L)
   if (!l.length) l = GB.filter((x) => x[0] === op)
   const g = l[rd(l.length) - 1], opts = g[3].split('|'), ch = shuf(opts)
   return { q: g[2], ch, a: ch.indexOf(opts[g[4]]), e: g[5] }
 }
- 
+
 // ---------- 数学A ----------
 const fa = (n) => (n <= 1 ? 1 : n * fa(n - 1)), Pm = (n, r) => fa(n) / fa(n - r), Cm = (n, r) => fa(n) / (fa(r) * fa(n - r))
 function genA(op, L) {
@@ -233,12 +236,13 @@ function genA(op, L) {
   return { q: `赤玉${r}個、白玉${w}個から3個を同時に取り出すとき、赤玉をちょうど${j}個含む取り出し方は何通り？`, a: Cm(r, j) * Cm(w, 3 - j), e: `${r}C${j}×${w}C${3 - j}＝${Cm(r, j)}×${Cm(w, 3 - j)}＝${Cm(r, j) * Cm(w, 3 - j)}` }
 }
 // ---------- 化学計算（原子量 H=1, C=12, N=14, O=16, Na=23, Mg=24, S=32, Ca=40、標準状態の気体 22.4 L/mol）----------
-const SUBS = [['H₂O', 18, 1], ['CO₂', 44, 2], ['NaOH', 40, 1], ['CaCO₃', 100, 3], ['H₂SO₄', 98, 4]]
+const SUBS = [['H₂O', 18, 1], ['CO₂', 44, 2], ['NaOH', 40, 1], ['CaCO₃', 100, 3], ['H₂SO₄', 98, 4], ['NH₃', 17, 0], ['CH₄', 16, 0], ['O₂', 32, 2], ['MgO', 40, 1], ['Na₂CO₃', 106, 3]]
 function genC(op, L) {
-  const [f, M, nO] = SUBS[rd(5) - 1], k = rd(5)
+  let [f, M, nO] = SUBS[rd(SUBS.length) - 1]; const k = rd(5)
   if (op === 1) {
     if (L === 1) return { q: `${M * k}g の ${f}（式量・分子量${M}）は何mol？`, a: k, e: `物質量＝質量÷モル質量＝${M * k}÷${M}＝${k}mol` }
     if (L === 2) return { q: `${k}mol の ${f}（式量・分子量${M}）の質量は何g？`, a: M * k, e: `質量＝物質量×モル質量＝${k}×${M}＝${M * k}g` }
+    if (!nO) { [f, M, nO] = SUBS[rd(5) - 1] }
     return { q: `${M * k}g の ${f}（式量・分子量${M}）に含まれる酸素原子は何mol？`, a: k * nO, e: `${M * k}÷${M}＝${k}mol。1つあたり酸素${nO}個なので ${k * nO}mol` }
   }
   if (op === 2) {
@@ -299,28 +303,302 @@ function genJH(op, L) {
   const ch = shuf([g[3], ...shuf([...new Set(JHB.filter((x) => x[5] === g[5] && x[3] !== g[3]).map((x) => x[3]))]).slice(0, 3)])
   return { q: g[2], ch, a: ch.indexOf(g[3]), e: `${g[3]}${g[4] ? '：' + g[4] : ''}` }
 }
- 
+
+
+// ===== 問題パターンの追加（基本の問題に加えて、約半分はこちらの別形式から出題）=====
+const gcd = (a, b) => (b ? gcd(b, a % b) : a)
+function xS(op, d) {
+  if (op === 1) { if (rd(2) === 1) { const a = rnd(d), b = rnd(Math.min(d, 3)); return { q: `${a} × ${b}`, a: a * b, e: `${a}×${b}＝${a * b}` } } const k = rnd(2); return { q: `${k}²`, a: k * k, e: `${k}×${k}＝${k * k}` } }
+  if (op === 2) { let v = rnd(d + 1), s2 = v, q = `${v}`; for (let i = 1; i < 4 + d; i++) { const x = rnd(d + 1); if (Math.random() < 0.5 && s2 - x >= 0) { s2 -= x; q += ` － ${x}` } else { s2 += x; q += ` ＋ ${x}` } } return { q, a: s2, e: `左から順に足し引きして ${s2}` } }
+  if (op === 3) { const b = rnd(2), qt = rnd(Math.max(d - 1, 1)), r = rd(b) - 1, w = rd(2) === 1; return { q: `${b * qt + r} ÷ ${b} の${w ? '商' : '余り'}`, a: w ? qt : r, e: `${b}×${qt}＝${b * qt}、${b * qt + r}－${b * qt}＝${r}。商は${qt}・余りは${r}` } }
+  if (op === 4) { const k = d === 2 ? 3 + rd(7) : d === 3 ? 10 + rd(11) : 21 + rd(20); return { q: `∛${k ** 3}（立方根）`, a: k, e: `${k}³＝${k ** 3} なので ${k}` } }
+  if (op === 5) { if (rd(2) === 1) { const k = d === 2 ? rnd(2) : 100 + rd(200); return { q: `${k}²`, a: k * k, e: `${k}×${k}＝${k * k}` } } const k = d === 2 ? 3 + rd(7) : d === 3 ? 10 + rd(11) : 21 + rd(20); return { q: `${k}³`, a: k ** 3, e: `${k}×${k}×${k}＝${k ** 3}` } }
+}
+function xJ(op, L) {
+  const m = L + 1
+  if (op === 1) { const a = rd(5) * m, b = rd(5) * m, c = rd(5) + 1, d = rd(9) - 4 || 2; return { q: `x＝${a}, y＝${b} のとき ${c}x ${sg(d, 'y')} の値`, a: c * a + d * b, e: `代入して ${c}×${a} ${sg(d)}×${b}＝${c * a + d * b}` } }
+  if (op === 2) {
+    if (rd(2) === 1) { const n = rd(5) * 10, p = rd(9) * 10, q = rd(4) + 1; return { q: `鉛筆${q}本とノート1冊を買うと${q * p + n}円。ノートは${n}円。鉛筆1本は何円？`, a: p, e: `${q * p + n}－${n}＝${q * p}円が鉛筆${q}本分。${q * p}÷${q}＝${p}` } }
+    const a = rd(4) + 1, mm = rd(3) + 1, x = rd(8) + 1; return { q: `${a} : ${a * mm} ＝ x : ${mm * x}`, a: x, e: `内項の積＝外項の積より ${a * mm}x＝${a}×${mm * x}、x＝${x}` }
+  }
+  if (op === 3) { const t = rd(8) + 2, k = rd(8) + 1; return { q: `鶴と亀が合わせて${t + k}匹、足の数の合計は${2 * t + 4 * k}本。亀は何匹？`, a: k, e: `全部鶴とすると足は${2 * (t + k)}本。差${2 * k}本は亀1匹につき2本ずつ増えるので 亀＝${k}匹` } }
+  if (op === 4) { const a = rd(9) * (rd(2) === 1 ? 1 : -1), k = rd(6); return { q: `(x ${sg(a)})² ＝ ${k * k} の大きい方の解`, a: -a + k, e: `x ${sg(a)}＝±${k} より x＝${-a - k}, ${-a + k}。大きい方は ${-a + k}` } }
+  if (rd(2) === 1) { const mm = rd(6) + 1, pp = rd(8) + 1; return { q: `√${mm * pp * pp} ÷ √${mm}`, a: pp, e: `√${mm * pp * pp}＝${pp}√${mm} なので ${pp}` } }
+  const mm = rd(5) + 1, pp = rd(5) + 1, qq = rd(5) + 1; return { q: `√${mm * pp * pp} × √${mm * qq * qq}`, a: mm * pp * qq, e: `${pp}√${mm}×${qq}√${mm}＝${pp * qq}×${mm}＝${mm * pp * qq}` }
+}
+function xH(op, L) {
+  if (op === 1) {
+    if (rd(2) === 1) { const r1 = rd(8), r2 = rd(8); return { q: `x² ${sg(-(r1 + r2), 'x')} ${sg(r1 * r2)} ＝ 0 の2解を α, β とするとき α²＋β² の値`, a: r1 * r1 + r2 * r2, e: `α＋β＝${r1 + r2}、αβ＝${r1 * r2}。α²＋β²＝(α＋β)²－2αβ＝${r1 * r1 + r2 * r2}` } }
+    const a = rd(4), b = rd(9) - 4 || 3, c = rd(9) - 4 || 2; return { q: `${a}x² ${sg(b, 'x')} ${sg(c)} ＝ 0 の判別式 D の値`, a: b * b - 4 * a * c, e: `D＝b²－4ac＝${b * b}－4×${a}×(${c})＝${b * b - 4 * a * c}` }
+  }
+  if (op === 2) {
+    if (rd(2) === 1) { const a = rd(4) + 2, b = rd(3) + 1, c = rd(a); return { q: `2^${a} × 2^${b} ÷ 2^${c}`, a: 2 ** (a + b - c), e: `指数をたして引く：2^(${a}＋${b}－${c})＝2^${a + b - c}＝${2 ** (a + b - c)}` } }
+    const k = rd(5) + 1; return rd(2) === 1 ? { q: `3^x ＝ ${3 ** k} を満たす x`, a: k, e: `${3 ** k}＝3^${k} なので x＝${k}` } : { q: `2^(x＋1) ＝ ${2 ** (k + 1)} を満たす x`, a: k, e: `${2 ** (k + 1)}＝2^${k + 1} なので x＋1＝${k + 1}、x＝${k}` }
+  }
+  if (op === 3) {
+    if (rd(2) === 1) { const n = [2, 3, 4, 5, 6, 9, 10, 12][rd(8) - 1]; return { q: `π/${n} ラジアンは何度？`, a: 180 / n, e: `π＝180° なので 180°÷${n}＝${180 / n}°` } }
+    const [f, v] = [['sinθ＝1/2', 180], ['cosθ＝1/2', 360], ['tanθ＝1', 270], ['sinθ＝－1/2', 540], ['cosθ＝－1/2', 360]][rd(5) - 1]
+    return { q: `0°≦θ＜360° のとき ${f} を満たす θ の和`, a: v, e: `単位円で解は2つ。その和は ${v}°` }
+  }
+  if (op === 4) {
+    const t = rd(4), a = rd(4)
+    if (rd(3) === 1) { const b = rd(6), c = rd(9); return { q: `y＝${a}x² ${sg(b, 'x')} ${sg(c)} 上の x＝${t} における接線の y 切片`, a: c - a * t * t, e: `接線：y＝f′(${t})(x－${t})＋f(${t})。y切片＝f(${t})－${t}f′(${t})＝${c - a * t * t}` } }
+    if (rd(2) === 1) { const c = rd(9); return { q: `y＝－x² ＋ ${2 * a}x ＋ ${c} の最大値`, a: a * a + c, e: `平方完成：y＝－(x－${a})²＋${a * a + c}。最大値 ${a * a + c}` } }
+    const k = rd(4) + 1; return { q: `∫₁^${k + 1} 3x² dx`, a: (k + 1) ** 3 - 1, e: `[x³]₁^${k + 1}＝${(k + 1) ** 3}－1＝${(k + 1) ** 3 - 1}` }
+  }
+  const n = rd(8) + 2, r = rd(2) + 1, a = rd(4)
+  if (rd(3) === 1) return { q: `Σ(k＝1→${n}) k`, a: (n * (n + 1)) / 2, e: `n(n＋1)/2＝${n}×${n + 1}/2＝${(n * (n + 1)) / 2}` }
+  if (rd(2) === 1) return { q: `Σ(k＝1→${n}) k²`, a: (n * (n + 1) * (2 * n + 1)) / 6, e: `n(n＋1)(2n＋1)/6＝${(n * (n + 1) * (2 * n + 1)) / 6}` }
+  return { q: `等比数列 初項${a}・公比${r + 1} の第${n > 7 ? 6 : n}項`, a: a * (r + 1) ** ((n > 7 ? 6 : n) - 1), e: `一般項 a·r^(n－1)＝${a}×${r + 1}^${(n > 7 ? 6 : n) - 1}＝${a * (r + 1) ** ((n > 7 ? 6 : n) - 1)}` }
+}
+function x3(op, L) {
+  if (op === 1) {
+    const v = rd(3)
+    if (v === 1) { const n = rd(8) + 1; return { q: `lim(x→1) (x^${n} － 1) ÷ (x － 1)`, a: n, e: `(x^${n}－1)＝(x－1)(x^${n - 1}＋…＋1)。x→1 で項が${n}個の和＝${n}` } }
+    if (v === 2) { const k = rd(8) + 1; return { q: `lim(x→0) (e^(${k}x) － 1) ÷ x`, a: k, e: `(e^t－1)/t→1 を使う。t＝${k}x として ${k}×1＝${k}` } }
+    const c = rd(4) + 1, k = rd(5) + 1; return { q: `lim(n→∞) (${c * k}n ＋ ${rd(9)}) ÷ (${c}n ＋ ${rd(9)})`, a: k, e: `分母分子を n で割ると ${c * k}/${c}＝${k}` }
+  }
+  if (op === 2) {
+    const a = rd(6), v = rd(3)
+    if (v === 1) return { q: `f(x)＝e^(${a}x) のとき f′(0)`, a, e: `f′(x)＝${a}e^(${a}x)。x＝0 で ${a}` }
+    if (v === 2) return { q: `f(x)＝sin(${a}x) のとき f′(0)`, a, e: `f′(x)＝${a}cos(${a}x)。x＝0 で ${a}` }
+    const t = rd(4); return { q: `f(x)＝${a * t}ln x のとき f′(${t})`, a, e: `f′(x)＝${a * t}/x。x＝${t} で ${a}` }
+  }
+  if (op === 3) {
+    const k = rd(5), v = rd(3)
+    if (v === 1) return { q: `∫₀^π ${k} sin x dx`, a: 2 * k, e: `[－${k}cos x]₀^π＝${k}＋${k}＝${2 * k}` }
+    if (v === 2) return { q: `∫₁^e ${k}/x dx`, a: k, e: `[${k}ln x]₁^e＝${k}(1－0)＝${k}` }
+    const n = rd(4) + 1; return { q: `∫₀^1 ${k * (n + 1)}x^${n} dx`, a: k, e: `[${k}x^${n + 1}]₀^1＝${k}` }
+  }
+  if (op === 4) { const a = rd(9); return { q: `Σ(n＝1→∞) ${a}・(1/2)^n`, a, e: `初項${a}/2・公比1/2 なので (${a}/2)/(1－1/2)＝${a}` } }
+  if (rd(2) === 1) { const a = rd(6), b = rd(6); return { q: `(${a} ＋ ${b}i)(${a} － ${b}i)`, a: a * a + b * b, e: `和と差の積：${a}²－(${b}i)²＝${a * a}＋${b * b}＝${a * a + b * b}` } }
+  const a = rd(6), b = rd(6); return { q: `(${a} ＋ i)(${b} ＋ i) の実部`, a: a * b - 1, e: `展開：${a * b}＋${a}i＋${b}i＋i²。実部は ${a * b}－1＝${a * b - 1}` }
+}
+function xA(op, L) {
+  if (op === 1) {
+    const v = rd(3)
+    if (v === 1) { const n = rd(3) + 5, m = rd(n - 3); return { q: `${n}! ÷ ${m}!`, a: fa(n) / fa(m), e: `${n}!÷${m}!＝${fa(n) / fa(m)}` } }
+    if (v === 2) { const n = rd(6) + 5, r = rd(3) + 1; return { q: `${n}人から${r}人の委員を選ぶ選び方は何通り？`, a: Cm(n, r), e: `順序は関係ないので ${n}C${r}＝${Cm(n, r)}` } }
+    const n = rd(4) + 5; return { q: `異なる${n}個の数字から3つを選んで並べる3桁の整数は何個？`, a: Pm(n, 3), e: `${n}P3＝${n}×${n - 1}×${n - 2}＝${Pm(n, 3)}` }
+  }
+  if (op === 2) { const n = rd(2) + 3, k = rd(2) + 2; return { q: `異なる${n}個の玉を${k}個の箱に入れる入れ方は何通り？（空の箱もよい）`, a: k ** n, e: `玉1個につき${k}通りなので ${k}^${n}＝${k ** n}` } }
+  if (op === 3) {
+    const w = ['TOKYO', 'APPLE', 'BANANA', 'LETTER', 'MAMMA'][rd(5) - 1], cnt = {}; for (const c of w) cnt[c] = (cnt[c] || 0) + 1
+    const v = Object.values(cnt).reduce((t, x) => t / fa(x), fa(w.length))
+    return { q: `「${w}」の文字をすべて並べかえてできる文字列は何通り？`, a: v, e: `${w.length}!÷（同じ文字の個数の階乗）＝${v}` }
+  }
+  if (op === 4) {
+    if (rd(2) === 1) { const a = rd(800) + 100, b = rd(8) + 2; return { q: `${a} を ${b} で割った余り`, a: a % b, e: `${a}＝${b}×${Math.floor(a / b)}＋${a % b}` } }
+    const i = rd(3), j = rd(3), n = 2 ** i * 3 ** j, sig = ((2 ** (i + 1) - 1) * (3 ** (j + 1) - 1)) / 2
+    return { q: `${n} の正の約数の総和`, a: sig, e: `${n}＝2^${i}×3^${j}。(1＋…＋2^${i})(1＋…＋3^${j})＝${2 ** (i + 1) - 1}×${(3 ** (j + 1) - 1) / 2}＝${sig}` }
+  }
+  const n = rd(80) + 20, a = rd(5) + 2
+  if (rd(2) === 1) return { q: `1から${n}までの整数のうち、${a}の倍数は何個？`, a: Math.floor(n / a), e: `${n}÷${a}の商＝${Math.floor(n / a)}個` }
+  const b = [2, 3, 5, 7].filter((x) => gcd(x, a) === 1)[0]
+  return { q: `1から${n * 3}までの整数のうち、${a}でも${b}でも割り切れる数は何個？`, a: Math.floor((n * 3) / (a * b)), e: `${a}と${b}は互いに素。${a * b}の倍数を数えて ${Math.floor((n * 3) / (a * b))}個` }
+}
+const RX = [['2H₂ ＋ O₂ → 2H₂O', 'H₂', 'H₂O', 2, 2], ['N₂ ＋ 3H₂ → 2NH₃', 'H₂', 'NH₃', 3, 2], ['CH₄ ＋ 2O₂ → CO₂ ＋ 2H₂O', 'O₂', 'CO₂', 2, 1], ['C₃H₈ ＋ 5O₂ → 3CO₂ ＋ 4H₂O', 'C₃H₈', 'CO₂', 1, 3], ['2KClO₃ → 2KCl ＋ 3O₂', 'KClO₃', 'O₂', 2, 3]]
+function xC(op, L) {
+  if (op === 4) { const [eq, f, t, cf, ct] = RX[rd(5) - 1], k = rd(4); return { q: `${eq}　${f} ${cf * k}mol を反応させると ${t} は何mol できる（または反応する）？`, a: ct * k, e: `係数比 ${f}：${t}＝${cf}：${ct}。${cf * k}×${ct}/${cf}＝${ct * k}mol` } }
+  if (op === 3 && L === 3) { const c1 = rd(2), c2 = rd(2), v = 100 * rd(2); return { q: `${c1}mol/L の塩酸 ${v}mL を中和するのに、${c2}mol/L の水酸化ナトリウム水溶液は何mL必要？`, a: (c1 * v) / c2, e: `H⁺の物質量＝OH⁻の物質量：${c1}×${v}＝${c2}×x より x＝${(c1 * v) / c2}mL` } }
+}
+const X = { S: xS, J: xJ, H: xH, III: x3, A: xA, CH: xC }
+const pick = (M, op, L, base) => { const v = Math.random() < 0.55 && X[M](op, L); return v || base(op, L) }
+
+// ===== 語彙・文法・日本史の問題数を増やす =====
+WB.W3.push(...wb('allow:許す,arrive:到着する,believe:信じる,belong:所属する,bridge:橋,century:世紀,collect:集める,comfortable:快適な,communicate:意思疎通する,culture:文化,dangerous:危険な,describe:説明する,develop:発達させる,difficult:難しい,discuss:話し合う,educate:教育する,environment:環境,exchange:交換する,experience:経験,express:表現する,familiar:よく知られた,foreign:外国の,government:政府,graduate:卒業する,introduce:紹介する,invent:発明する,island:島,journey:旅,language:言語,local:地元の,manage:管理する,medicine:薬,message:伝言,nature:自然,necessary:必要な,opinion:意見,perform:演じる,prepare:準備する,produce:生産する,promise:約束する,recycle:再利用する,repair:修理する'))
+WB.W2.push(...wb('abroad:海外へ,accurate:正確な,advertise:宣伝する,afford:～する余裕がある,aware:気づいて,campaign:運動,challenge:挑戦,circumstance:状況,conclude:結論づける,confirm:確認する,conflict:対立,contribute:貢献する,convenient:便利な,cooperate:協力する,creature:生き物,decline:減少する,demand:需要,deliver:配達する,disaster:災害,distance:距離,effect:影響,emerge:現れる,encourage:励ます,essential:不可欠な,evidence:証拠,expert:専門家,extinct:絶滅した,fashion:流行,frequently:頻繁に,hesitate:ためらう,identify:特定する,ignore:無視する,inform:知らせる,lack:不足,limit:制限,majority:大多数,mention:言及する,obvious:明らかな,occur:起こる,pollution:汚染,predict:予測する,previous:以前の'))
+WB.WP1.push(...wb('acquire:獲得する,advocate:擁護する,sustain:維持する,allocate:割り当てる,alleviate:軽減する,anticipate:予期する,arbitrary:恣意的な,authentic:本物の,bias:偏見,comprehensive:包括的な,compromise:妥協,conceal:隠す,controversy:論争,convey:伝える,deceive:だます,demonstrate:実証する,deprive:奪う,deliberate:意図的な,diminish:減少させる,discard:捨てる,distinguish:区別する,diverse:多様な,dominate:支配する,endure:耐える,enforce:実施する,exaggerate:誇張する,exhaust:使い果たす,exploit:搾取する,fluctuate:変動する,foster:育成する,hinder:妨げる,implement:実行する,inherent:固有の,instinct:本能,negotiate:交渉する,neutral:中立の,obstacle:障害,oppose:反対する,perceive:知覚する,persist:固執する,prevail:普及している,reinforce:強化する'))
+WB.W1.push(...wb('abate:和らぐ,abstain:控える,adversity:逆境,ambivalent:相反する感情を持つ,arduous:骨の折れる,austere:厳格な,benevolent:慈悲深い,blatant:露骨な,candid:率直な,circumvent:回避する,clandestine:秘密の,coerce:強制する,cogent:説得力のある,condone:容認する,conspicuous:目立つ,copious:豊富な,culminate:頂点に達する,daunting:気後れさせる,debilitate:衰弱させる,deference:敬意,disparage:けなす,dissent:異議,eloquent:雄弁な,enigma:謎,exacerbate:悪化させる,exonerate:無罪にする,frugal:質素な,gregarious:社交的な,haphazard:行き当たりばったりの,idiosyncrasy:特異性,impetus:勢い,inadvertent:不注意による,indigenous:土着の,innocuous:無害な,lethargic:無気力な,magnanimous:寛大な,nefarious:極悪の,obscure:不明瞭な,ostentatious:見せびらかしの,paramount:最高の,perfunctory:おざなりの,quixotic:非現実的に理想主義の'))
+WB.K.push(...wb('あてなり:上品だ,いとほし:かわいそうだ,おとなし:大人びている,かしこし:恐れ多い,さうざうし:物足りない,すさまじ:興ざめだ,つれなし:冷淡だ,ねんごろなり:丁寧だ,はかなし:頼りない,めづ:愛する,やさし:恥ずかしい,よろづ:すべて,らうたし:いじらしい,あながち:むやみに,いたづらなり:むなしい,おぼつかなし:はっきりしない,かたし:難しい,けしき:様子,ことわり:道理,さらなり:言うまでもない,しのぶ:思い慕う,たより:ついで,ひねもす:一日中,わりなし:どうしようもない,おぼす:お思いになる,つひに:最後に,ありく:歩き回る,あまた:たくさん,いざ:さあ,げに:本当に,さすがに:そうはいってもやはり'))
+WB.KJ.push(...wb('稀有:けう,趨勢:すうせい,蓋し:けだし,彷彿:ほうふつ,諧謔:かいぎゃく,瑕疵:かし,矜持:きょうじ,軋轢:あつれき,拙速:せっそく,陳腐:ちんぷ,凡庸:ぼんよう,蛇足:だそく,疎外:そがい,暫定:ざんてい,抜粋:ばっすい,揶揄:やゆ,刹那:せつな,相殺:そうさい,破綻:はたん,払底:ふってい,糾弾:きゅうだん,逼迫:ひっぱく,忖度:そんたく,寡黙:かもく,迂回:うかい,顛末:てんまつ,啓蒙:けいもう,吟味:ぎんみ,煩雑:はんざつ,台頭:たいとう,凌駕:りょうが,暗澹:あんたん'))
+GB.push(
+  [1, 1, 'She ( ) to school every day.', 'go|goes|going|went', 1, '主語が三人称単数・現在の習慣 → goes'],
+  [1, 1, 'I ( ) my homework when my mother came home.', 'do|did|was doing|have done', 2, '過去のある時点で進行中 → 過去進行形 was doing'],
+  [1, 2, 'He ( ) already left when I arrived.', 'has|had|have|was', 1, '到着より前に完了 → 過去完了 had left'],
+  [1, 2, 'If it ( ) tomorrow, we will stay home.', 'rains|will rain|rained|is raining', 0, '時・条件の副詞節は未来のことも現在形 rains'],
+  [1, 3, 'This time next week, I ( ) on the beach.', 'lie|will lie|will be lying|have lain', 2, '未来のある時点で進行中 → 未来進行形'],
+  [1, 3, 'She ( ) here for two hours by the time he comes.', 'waits|has waited|will have been waiting|waited', 2, 'by the time ～ は未来完了（進行）will have been waiting'],
+  [2, 1, 'The man ( ) I met yesterday is a doctor.', 'whom|whose|which|what', 0, '先行詞が人で目的格 → whom（that や省略も可）'],
+  [2, 1, 'This is the book ( ) I bought yesterday.', 'who|which|whose|where', 1, '先行詞が物 → which'],
+  [2, 2, 'I know the reason ( ) he was absent.', 'what|why|where|when', 1, 'reason が先行詞なら関係副詞 why'],
+  [2, 2, 'He ran fast ( ) he could catch the train.', 'so that|because|although|unless', 0, '目的を表す so that ～ can'],
+  [2, 3, '( ) you like it or not, you have to do it.', 'If|Whether|Unless|Since', 1, 'Whether ～ or not（～であろうとなかろうと）'],
+  [2, 3, 'He is the only man ( ) I can trust.', 'who|which|that|whom', 2, 'the only がつく先行詞には that が好まれる'],
+  [3, 1, 'You ( ) see a doctor. You look pale.', 'may|should|can|will', 1, '助言は should'],
+  [3, 1, '( ) I open the window?', 'Shall|Will|May|Must', 2, '許可を求める May I ～?'],
+  [3, 2, 'He ( ) have been tired, because he went to bed early.', 'must|can|should|may', 0, '過去の推量 must have p.p.（～だったにちがいない）'],
+  [3, 2, 'I wish I ( ) a bird.', 'am|were|will be|had', 1, '現在の願望（仮定法過去）I wish I were'],
+  [3, 3, 'If I had known the truth, I ( ) him.', 'would help|will help|would have helped|helped', 2, '仮定法過去完了 would have p.p.'],
+  [3, 3, 'It is high time you ( ) to bed.', 'go|went|will go|have gone', 1, 'It is time＋仮定法過去（もう～してよい頃だ）'],
+  [4, 1, 'She is good ( ) playing the piano.', 'in|at|on|to', 1, 'be good at ～（～が得意）'],
+  [4, 1, 'We arrived ( ) Osaka at noon.', 'at|in|on|to', 1, '大きな都市には in を使う（arrive in ～）'],
+  [4, 2, 'I am looking forward ( ) you.', 'to see|to seeing|seeing|see', 1, 'look forward to ～ing'],
+  [4, 2, 'He is proud ( ) his son.', 'at|of|for|with', 1, 'be proud of ～'],
+  [4, 3, 'The teacher is familiar ( ) the students.', 'of|with|at|for', 1, 'be familiar with ～（～に精通している）'],
+  [4, 3, 'He apologized ( ) me for being late.', 'at|for|to|with', 2, 'apologize to 人 for 事'],
+)
+JHB.push(
+  [1, 1, '平安京に都を移した天皇は？', '桓武天皇', '794年', 'p'], [1, 2, '壬申の乱に勝利して即位した天皇は？', '天武天皇', '672年', 'p'],
+  [1, 2, '「源氏物語」の作者は？', '紫式部', '藤原道長の時代の女房', 'p'], [1, 2, '「枕草子」の作者は？', '清少納言', '一条天皇の中宮定子に仕えた', 'p'],
+  [1, 2, '鎌倉幕府の滅亡後、建武の新政を行った天皇は？', '後醍醐天皇', '1333年', 'p'], [1, 3, '室町幕府を開き、初代将軍となった人物は？', '足利尊氏', '1338年に征夷大将軍に任命', 'p'],
+  [1, 3, '日明貿易（勘合貿易）を始めた3代将軍は？', '足利義満', '15世紀初め', 'p'], [2, 1, '江戸幕府を開いた人物は？', '徳川家康', '1603年', 'p'],
+  [2, 2, '参勤交代を制度化した3代将軍は？', '徳川家光', '島原の乱後に鎖国体制を整えた', 'p'], [2, 2, '「南総里見八犬伝」の作者は？', '曲亭馬琴', '化政文化の読本作者', 'p'],
+  [2, 3, '生類憐みの令を出した5代将軍は？', '徳川綱吉', '元禄文化の時代', 'p'], [2, 3, '株仲間を奨励し商業を重視した老中は？', '田沼意次', '田沼時代', 'p'],
+  [3, 1, '黒船で来航し開国を求めたアメリカ人は？', 'ペリー', '1853年、浦賀に来航', 'p'], [3, 2, '薩長同盟の仲介をした土佐藩出身の人物は？', '坂本龍馬', '1866年', 'p'],
+  [3, 2, '民撰議院設立建白書を提出した人物の一人は？', '板垣退助', '1874年。自由民権運動のきっかけ', 'p'], [3, 3, '立憲改進党を結成した人物は？', '大隈重信', '1882年', 'p'],
+  [1, 2, '飛鳥時代に中大兄皇子らが行った政治改革は？', '大化の改新', '645年', 't'], [1, 2, '唐の律令制にならって701年に完成した法は？', '大宝律令', '', 't'],
+  [1, 2, '743年に開墾地の私有を認めた法は？', '墾田永年私財法', '荘園成立のきっかけ', 't'], [1, 3, '後鳥羽上皇が幕府打倒を図って敗れた1221年の戦いは？', '承久の乱', '幕府の支配が西国に及んだ', 't'],
+  [1, 3, '御家人の困窮を救うため1297年に出された法令は？', '永仁の徳政令', '元寇後の財政難', 't'], [2, 2, '大名が1年おきに江戸と領地を往復した制度は？', '参勤交代', '徳川家光が制度化', 't'],
+  [2, 3, '1858年に結ばれた、領事裁判権を認めた不平等条約は？', '日米修好通商条約', '関税自主権もなかった', 't'], [3, 2, '1873年に行われた土地の税制改革は？', '地租改正', '地価の3％を現金で納める', 't'],
+  [3, 2, '1873年に公布された、満20歳の男子に兵役を課した法令は？', '徴兵令', '国民皆兵をめざした', 't'], [3, 3, '1925年に成立した、25歳以上の男子に選挙権を与えた法は？', '普通選挙法', '同年に治安維持法も制定', 't'],
+  [1, 1, '大化の改新が始まった年は？', '645年', '', 'y'], [1, 2, '鎌倉幕府が滅亡した年は？', '1333年', '', 'y'], [1, 2, '元寇の文永の役が起こった年は？', '1274年', '', 'y'],
+  [2, 2, '鎖国体制が完成（ポルトガル船来航禁止）した年は？', '1639年', '', 'y'], [2, 3, '島原の乱が起こった年は？', '1637年', '', 'y'],
+  [3, 2, '新橋〜横浜間に鉄道が開通した年は？', '1872年', '', 'y'], [3, 3, '日清戦争が始まった年は？', '1894年', '', 'y'],
+  [3, 3, '日露戦争が始まった年は？', '1904年', '', 'y'], [3, 3, '関東大震災が起こった年は？', '1923年', '', 'y'],
+)
+
+
+// ===== 第2弾：語彙・文法・日本史をさらに拡充 =====
+WB.W3.push(...wb('absent:欠席の,accident:事故,address:住所,advice:助言,afraid:恐れて,agree:賛成する,ahead:前方に,alone:ひとりで,appear:現れる,area:地域,argue:議論する,article:記事,athlete:運動選手,attention:注意,average:平均,bake:焼く,beach:浜辺,bill:請求書,blind:目の見えない,boil:沸騰させる,boring:退屈な,brave:勇敢な,breathe:呼吸する,broken:壊れた,burn:燃やす,business:商売,careful:注意深い,cause:原因,celebrate:祝う,chance:機会,cheap:安い,cheer:声援を送る,climb:登る,close:近い,cloud:雲,cost:費用がかかる,crowd:群衆,custom:風習,damage:損害,deep:深い,department:部門,depend:頼る,destroy:破壊する,direction:方向,dirty:汚い,disappear:消える,divide:分ける,doubt:疑い,dream:夢,earn:稼ぐ,earth:地球,electric:電気の,empty:空の,enemy:敵,engine:エンジン,enter:入る,equal:等しい,escape:逃げる,event:出来事,exactly:正確に,example:例,excellent:優れた,expensive:高価な,explain:説明する,fail:失敗する,fair:公平な,fall:落ちる,farm:農場,fear:恐れ,final:最後の,fix:修理する,flight:飛行,forest:森,forget:忘れる,fresh:新鮮な,fuel:燃料,gather:集まる,gentle:優しい,gift:贈り物,glad:うれしい,grow:育つ,guide:案内する,habit:癖,hardly:ほとんど～ない,health:健康,heavy:重い,hide:隠す,honest:正直な,hurry:急ぐ,imagine:想像する,important:重要な,include:含む,independent:独立した,interest:興味,join:参加する,lead:導く,lend:貸す,lift:持ち上げる,lonely:孤独な,loud:大声の,main:主な,match:試合,matter:問題,mean:意味する,meal:食事,memory:記憶,mistake:間違い,narrow:狭い,notice:気づく,offer:申し出る,order:注文する'))
+WB.W2.push(...wb('absorb:吸収する,abuse:虐待,access:利用する権利,accompany:同行する,adapt:適応する,adjust:調整する,admire:称賛する,admit:認める,adopt:採用する,affect:影響を与える,agency:代理店,agreement:合意,alternative:代案,amaze:驚嘆させる,analyze:分析する,announce:発表する,anxious:心配な,apologize:謝る,appeal:訴える,appoint:任命する,approach:近づく,approve:承認する,arrange:手配する,assist:手伝う,assume:仮定する,atmosphere:雰囲気,attempt:試みる,audience:聴衆,authority:権威,available:利用できる,avoid:避ける,bend:曲げる,blame:責める,boundary:境界,budget:予算,capacity:収容力,cancel:取り消す,charge:請求する,climate:気候,collapse:崩壊する,combine:結合させる,comment:論評,commit:犯す,compare:比較する,compete:競争する,complex:複雑な,concentrate:集中する,concern:懸念,condition:状態,conduct:実施する,conscious:意識して,consume:消費する,contain:含む,content:内容,convince:納得させる,crisis:危機,crucial:決定的な,cure:治す,curious:好奇心の強い,defeat:負かす,defend:守る,define:定義する,delay:遅らせる,depart:出発する,deserve:値する,desire:願望,destination:目的地,detail:詳細,device:装置,differ:異なる,disappoint:失望させる,discipline:規律,display:展示する,distribute:分配する,disturb:邪魔する,domestic:国内の,economy:経済,edit:編集する,electronic:電子の,eliminate:排除する,employ:雇う,enable:可能にする,enormous:莫大な,entire:全体の,equip:備え付ける,error:誤り,establish:設立する,evaluate:評価する'))
+WB.WP1.push(...wb('abolish:廃止する,absurd:ばかげた,abundant:豊富な,accelerate:加速させる,accessible:近づきやすい,accommodate:収容する,accountable:説明責任がある,accuse:告発する,acknowledge:認識する,adhere:忠実に守る,adjacent:隣接した,affiliate:提携する,affluent:豊かな,aggregate:集計,alienate:疎遠にする,ambitious:野心的な,amend:修正する,analogy:類似,annual:年間の,apparent:明白な,apprehend:理解する,appropriate:適切な,assert:主張する,assess:査定する,attribute:～のせいにする,backlog:未処理分,barrier:障壁,bizarre:奇妙な,boast:自慢する,brief:簡潔な,brutal:残酷な,bureaucracy:官僚制,cease:終わる,clarify:明確にする,coherent:一貫した,collaborate:共同で働く,collide:衝突する,commemorate:記念する,compel:強いる,compensate:補償する,competent:有能な,complement:補完する,complicate:複雑にする,comply:従う,comprise:構成する,compulsory:義務的な,conceive:思いつく,condemn:糾弾する,confer:授ける,confine:閉じ込める,consecutive:連続した,consensus:総意,consolidate:統合する,constrain:制約する,contemplate:熟考する,contradict:矛盾する,contrary:反対の,convene:召集する,convict:有罪とする,correspond:一致する,counterpart:対応するもの,credible:信頼できる,cumulative:累積的な,curb:抑制する,decisive:決定的な,deduce:推論する,default:怠慢,defy:反抗する,degrade:品位を落とす,delegate:委任する,denote:示す,deplete:枯渇させる,depict:描写する,derive:引き出す,designate:指名する,detain:拘留する,deviate:逸脱する,devise:考案する,devote:捧げる,digress:脱線する,disclose:暴露する,discriminate:差別する,dismantle:解体する,disperse:散らばる,dispose:処分する,disrupt:混乱させる'))
+WB.W1.push(...wb('abhor:忌み嫌う,abridge:要約する,abrupt:突然の,acerbic:辛辣な,acrimony:敵意,adamant:頑固な,adept:熟達した,admonish:戒める,adulation:追従,affable:愛想のよい,alacrity:敏速,altruistic:利他的な,amalgamate:合併する,anathema:忌み嫌われるもの,annihilate:全滅させる,antagonize:敵に回す,apathy:無関心,appease:なだめる,arbitrate:仲裁する,archaic:古風な,ardent:熱烈な,articulate:明確に述べる,ascertain:確かめる,aspire:熱望する,assuage:和らげる,astute:抜け目のない,audacious:大胆な,augment:増大させる,auspicious:幸先のよい,avarice:強欲,banal:陳腐な,bask:浴びる,bewilder:当惑させる,bolster:補強する,brevity:簡潔さ,camaraderie:友情,cajole:甘言で誘う,castigate:厳しく非難する,catalyst:触媒,caustic:腐食性の,censure:非難,chagrin:無念,chastise:叱責する,circumspect:慎重な,clemency:寛大さ,coalesce:合体する,cohesive:結束した,commensurate:釣り合った,complacent:自己満足した,concur:同意する,conducive:助けになる,contentious:議論を呼ぶ,convoluted:入り組んだ,corroborate:裏付ける,covert:隠れた,credulous:信じやすい,cryptic:謎めいた,curtail:削減する,cynical:冷笑的な,debacle:大失敗,decorum:礼儀,defunct:消滅した,delineate:詳しく描く,demise:終焉,deride:嘲笑する,derogatory:軽蔑的な,desultory:とりとめのない,deter:思いとどまらせる,devious:回りくどい,diffident:内気な,discern:見分ける,disdain:軽蔑,disseminate:広める,dogmatic:独断的な,dubious:疑わしい,eccentric:風変わりな,efface:消し去る,egregious:ひどい,elicit:引き出す,eminent:著名な,empirical:経験的な,emulate:見習う,endemic:風土性の,enervate:弱らせる,equivocal:どちらとも取れる,erudite:博学な,esoteric:難解な,euphemism:婉曲表現,evanescent:消えゆく,exemplary:模範的な,exhort:強く勧める,expedient:好都合な,explicit:明示的な,extol:激賞する,facetious:ふざけた,fallacy:誤り,fervent:燃えるような'))
+WB.K.push(...wb('あからさまなり:ほんのちょっとの間,あした:朝,いとど:いっそう,いはけなし:幼い,いぶせし:うっとうしい,うたて:いやに,うるはし:きちんとして美しい,おいらかなり:穏やかだ,おどろおどろし:ものものしい,おぼゆ:思われる,かこつ:ぐちをこぼす,きは:身分,きよらなり:気品があって美しい,くちをし:残念だ,けうとし:気味が悪い,こころにくし:奥ゆかしい,こころもとなし:じれったい,こちたし:仰々しい,さかし:賢い,さぶらふ:おそばに仕える,しどけなし:だらしない,せちなり:切実だ,ただなり:普通だ,たのもし:頼りになる,つきづきし:ふさわしい,つつまし:はばかられる,とく:早く,ところせし:窮屈だ,とみなり:急だ,なかなかなり:中途半端だ,なつかし:心ひかれる,なべて:一般に,なめし:無礼だ,なやむ:病気で苦しむ,にくし:気に入らない,ねたし:しゃくだ,のたまふ:おっしゃる,はづかし:こちらが気後れするほど立派だ,はるかなり:遠い,ひがごと:間違い,ふみ:手紙,ほいなし:不本意だ,まうく:用意する,まばゆし:まぶしい,まめなり:誠実だ,みやび:優雅,むつかし:不快だ,めやすし:感じがよい,ものうし:おっくうだ,やむごとなし:高貴だ,やをら:そっと,ゆめ:決して,らうがはし:乱雑だ,わづらふ:悩む,をこなり:愚かだ,あるじ:主人,あぢきなし:つまらない,さらぬ:避けられない,ところ:場所'))
+WB.KJ.push(...wb('遜色:そんしょく,概して:がいして,逐一:ちくいち,絶句:ぜっく,趣向:しゅこう,嗜好:しこう,憧憬:しょうけい,脚光:きゃっこう,一蹴:いっしゅう,辛辣:しんらつ,彷徨:ほうこう,傲慢:ごうまん,謙虚:けんきょ,懸隔:けんかく,狭隘:きょうあい,鬱屈:うっくつ,蒙昧:もうまい,隘路:あいろ,瓦解:がかい,遺憾:いかん,威嚇:いかく,畏怖:いふ,陰鬱:いんうつ,隠蔽:いんぺい,云々:うんぬん,穏便:おんびん,恩赦:おんしゃ,懐疑:かいぎ,概略:がいりゃく,画期的:かっきてき,渇望:かつぼう,葛藤:かっとう,完遂:かんすい,寛容:かんよう,稀薄:きはく,規範:きはん,偽装:ぎそう,奇抜:きばつ,欺瞞:ぎまん,詭弁:きべん,虚栄:きょえい,欣喜:きんき,勤勉:きんべん,軽蔑:けいべつ,啓発:けいはつ,契機:けいき,傑出:けっしゅつ,懸命:けんめい,厳粛:げんしゅく,巧妙:こうみょう,拘束:こうそく,懇願:こんがん,混沌:こんとん,錯誤:さくご,惨憺:さんたん,示威:じい,嫉妬:しっと,灼熱:しゃくねつ,洒脱:しゃだつ,周到:しゅうとう,熟慮:じゅくりょ,峻厳:しゅんげん,遵守:じゅんしゅ,叙述:じょじゅつ,浸透:しんとう,尽力:じんりょく,迅速:じんそく,枢要:すうよう,清廉:せいれん,折衷:せっちゅう,漸次:ぜんじ,疎通:そつう,措置:そち,怠惰:たいだ,耽溺:たんでき,弾劾:だんがい,嘲笑:ちょうしょう,懲罰:ちょうばつ,沈殿:ちんでん,墜落:ついらく,徹底:てってい,転嫁:てんか,倒錯:とうさく,陶酔:とうすい,蕩尽:とうじん,凸凹:でこぼこ,捏造:ねつぞう,把握:はあく,排斥:はいせき,媒介:ばいかい,迫害:はくがい,剝奪:はくだつ,波紋:はもん,繁忙:はんぼう,披露:ひろう,頻繁:ひんぱん,憤慨:ふんがい,偏屈:へんくつ,弁償:べんしょう,庇護:ひご,冒頭:ぼうとう,膨大:ぼうだい,麻痺:まひ,摩耗:まもう,末梢:まっしょう,敏腕:びんわん,無尽蔵:むじんぞう,滅却:めっきゃく,網羅:もうら,模倣:もほう,揺籃:ようらん,余韻:よいん,履歴:りれき,流布:るふ,隆盛:りゅうせい,賄賂:わいろ,歪曲:わいきょく'))
+// 同じ英語・同じ意味の重複は除く（選択肢に正解が2つ並ばないように）
+for (const k of Object.keys(WB)) { const e = new Set(), j = new Set(); WB[k] = WB[k].filter(([a, b]) => !e.has(a) && !j.has(b) && e.add(a) && j.add(b)) }
+
+const IRR = 'go went gone,see saw seen,take took taken,give gave given,write wrote written,eat ate eaten,begin began begun,break broke broken,speak spoke spoken,drive drove driven,know knew known,grow grew grown,fly flew flown,wear wore worn,choose chose chosen,fall fell fallen,forget forgot forgotten,swim swam swum,sing sang sung,drink drank drunk,come came come,run ran run,ride rode ridden,rise rose risen,steal stole stolen,throw threw thrown,draw drew drawn,show showed shown,bite bit bitten,hide hid hidden,shake shook shaken,bring brought brought,buy bought bought,catch caught caught,teach taught taught,think thought thought,build built built,lend lent lent,send sent sent,spend spent spent,feel felt felt,keep kept kept,sleep slept slept,leave left left,lose lost lost,hold held held,meet met met,pay paid paid,say said said,sell sold sold,tell told told,understand understood understood,win won won,hear heard heard,make made made,find found found,stand stood stood,sit sat sat'.split(',').map((x) => x.split(' '))
+function genIrr(L) {
+  const th = Math.ceil(IRR.length / 3), pool = IRR.slice((L - 1) * th, L * th), v = pool[rd(pool.length) - 1], k = rd(2), ans = v[k]
+  const wrong = [...new Set([v[0], v[1], v[2], ...shuf(IRR.flatMap((x) => [x[1], x[2]]))])].filter((x) => x !== ans)
+  const ch = shuf([ans, ...wrong.slice(0, 3)])
+  return { q: `「${v[0]}」の${k === 1 ? '過去形' : '過去分詞'}は？`, ch, a: ch.indexOf(ans), e: `${v[0]}－${v[1]}－${v[2]}（原形－過去形－過去分詞）` }
+}
+const TI = ['to不定詞のみ', '動名詞（～ing）のみ', 'どちらも可（意味は同じ）', 'どちらも可（意味が変わる）']
+const TOING = [['want', 0], ['hope', 0], ['decide', 0], ['plan', 0], ['promise', 0], ['refuse', 0], ['enjoy', 1], ['finish', 1], ['avoid', 1], ['mind', 1], ['practice', 1], ['like', 2], ['love', 2], ['begin', 2], ['start', 2], ['manage', 0], ['afford', 0], ['expect', 0], ['agree', 0], ['offer', 0], ['learn', 0], ['pretend', 0], ['fail', 0], ['consider', 1], ['admit', 1], ['deny', 1], ['suggest', 1], ['escape', 1], ['imagine', 1], ['give up', 1], ['put off', 1], ['miss', 1], ['keep', 1], ['continue', 2], ['prefer', 2], ['hate', 2], ['remember', 3], ['forget', 3], ['try', 3], ['regret', 3], ['stop', 3]]
+function genToIng(L) {
+  const th = Math.ceil(TOING.length / 3), pool = TOING.slice((L - 1) * th, L * th), [v, c] = pool[rd(pool.length) - 1]
+  const ch = shuf(TI)
+  return { q: `動詞「${v}」の後ろに動詞を続けるときの形は？`, ch, a: ch.indexOf(TI[c]), e: `${v} は ${TI[c]}` }
+}
+GB.push(
+  [1, 1, 'He ( ) basketball every Sunday.', 'play|plays|playing|played', 1, '三人称単数の現在形 plays'],
+  [1, 1, 'We ( ) dinner at seven yesterday.', 'have|had|has|having', 1, 'yesterday があるので過去形 had'],
+  [1, 2, 'I have lived here ( ) 2010.', 'for|since|during|from', 1, '起点を表す語には since'],
+  [1, 2, 'He has ( ) his key. He cannot get in.', 'lose|lost|losing|loses', 1, '現在完了 has p.p. → lost'],
+  [1, 2, 'The movie ( ) when we arrived at the theater.', 'already started|had already started|has already started|is already starting', 1, '到着より前に始まっていた → 過去完了'],
+  [1, 2, 'Look! It ( ) now.', 'snows|is snowing|snowed|has snowed', 1, '今まさに進行中 → 現在進行形'],
+  [1, 3, 'I ( ) him since last year.', 'did not see|have not seen|do not see|will not see', 1, 'since を伴う継続 → 現在完了'],
+  [1, 3, 'By next year, he ( ) here for ten years.', 'lives|has lived|will have lived|lived', 2, '未来のある時点までの継続 → 未来完了'],
+  [1, 3, 'She ( ) a book when the phone rang.', 'read|was reading|has read|reads', 1, '電話が鳴った時点で進行中 → 過去進行形'],
+  [2, 1, 'I have a friend ( ) lives in Canada.', 'who|which|whom|whose', 0, '先行詞が人・主格 → who'],
+  [2, 1, 'The bag ( ) she is carrying is heavy.', 'who|which|whose|where', 1, '先行詞が物 → which'],
+  [2, 2, 'This is the town ( ) I was born.', 'which|where|who|what', 1, '場所を表す関係副詞 where'],
+  [2, 2, 'I will call you ( ) I get home.', 'as soon as|so that|because of|although', 0, 'as soon as ～（～するとすぐに）'],
+  [2, 2, 'He was tired, ( ) he went on working.', 'but|so|for|or', 0, '逆接の but'],
+  [2, 3, 'All ( ) I want is your happiness.', 'what|that|which|who', 1, 'all が先行詞のとき関係代名詞は that'],
+  [2, 3, '( ) he said was not true.', 'That|What|Which|Who', 1, 'what he said＝彼が言ったこと（名詞節）'],
+  [2, 3, 'The girl ( ) mother is a doctor is my friend.', 'who|whose|whom|which', 1, '所有格 whose'],
+  [2, 3, 'I do not know ( ) he will come or not.', 'if|whether|that|what', 1, 'whether ～ or not（～かどうか）'],
+  [3, 1, '( ) you help me with this?', 'May|Can|Must|Shall', 1, '依頼は Can you ～?'],
+  [3, 1, 'You ( ) not smoke here.', 'must|can|may|will', 0, '禁止は must not'],
+  [3, 2, 'If I ( ) rich, I would travel around the world.', 'am|were|will be|have been', 1, '現在の事実に反する仮定法過去'],
+  [3, 2, 'She ( ) have missed the train.', 'can|must|may|should', 1, 'must have p.p. ～したにちがいない'],
+  [3, 2, 'You ( ) have told me earlier.', 'must|should|can|will', 1, 'should have p.p. ～すべきだったのに'],
+  [3, 3, 'I would rather you ( ) smoke here.', 'do not|did not|will not|have not', 1, 'would rather ＋ 仮定法過去（～してほしくない）'],
+  [3, 3, 'But for your help, I ( ) failed.', 'would have|will have|had|would', 0, 'But for ～＝If it had not been for ～（仮定法過去完了）'],
+  [3, 3, 'Without water, no living thing ( ) survive.', 'can|could|will|should', 1, 'Without ～（仮定法過去）→ could'],
+  [3, 3, 'She suggested that he ( ) a doctor.', 'sees|see|saw|seeing', 1, '提案の suggest の that節は動詞原形（should省略）'],
+  [4, 1, 'He is afraid ( ) dogs.', 'for|of|to|at', 1, 'be afraid of ～'],
+  [4, 1, 'I live ( ) Tokyo.', 'at|in|on|to', 1, '都市の中 → in'],
+  [4, 2, 'She is jealous ( ) her sister.', 'of|at|for|with', 0, 'be jealous of ～（～をうらやむ）'],
+  [4, 2, 'He explained the rule ( ) me.', 'for|to|at|on', 1, 'explain 事 to 人'],
+  [4, 2, 'This book consists ( ) three parts.', 'in|of|from|with', 1, 'consist of ～（～から成る）'],
+  [4, 3, 'She is indifferent ( ) fashion.', 'at|to|for|with', 1, 'be indifferent to ～（～に無関心だ）'],
+  [4, 3, 'He was deprived ( ) his rights.', 'from|of|for|with', 1, 'deprive 人 of 物（人から物を奪う）'],
+  [4, 3, 'I take ( ) my father in appearance.', 'after|for|on|to', 0, 'take after ～（～に似ている）'],
+  [4, 3, 'Please look ( ) this matter carefully.', 'at|into|for|after', 1, 'look into ～（調査する）'],
+)
+JHB.push(
+  [1, 1, '邪馬台国の女王は？', '卑弥呼', '魏に使いを送り「親魏倭王」の称号を得た', 'p'], [1, 1, '十七条の憲法を定めた人物は？', '聖徳太子', '604年', 'p'],
+  [1, 2, '遣唐使の停止を提案した人物は？', '菅原道真', '894年', 'p'], [1, 2, '東大寺の大仏造立を命じた天皇は？', '聖武天皇', '743年に詔を出した', 'p'],
+  [1, 2, '「古今和歌集」の編者の一人で「土佐日記」を書いた人物は？', '紀貫之', '', 'p'], [1, 2, '摂関政治の全盛期を築いた人物は？', '藤原道長', '摂政・関白として一族を繁栄させた', 'p'],
+  [1, 2, '院政を始めた上皇は？', '白河上皇', '1086年', 'p'], [1, 2, '平氏政権を築き太政大臣になった人物は？', '平清盛', '日宋貿易も推進', 'p'],
+  [1, 2, '壇ノ浦で平氏を滅ぼした源氏の武将は？', '源義経', '1185年', 'p'], [1, 2, '鎌倉幕府の初代執権は？', '北条時政', '源頼朝の妻・政子の父', 'p'],
+  [1, 3, '浄土宗を開いた僧は？', '法然', '専修念仏', 'p'], [1, 3, '浄土真宗を開いた僧は？', '親鸞', '悪人正機', 'p'],
+  [1, 3, '日蓮宗（法華宗）を開いた僧は？', '日蓮', '題目を唱える', 'p'], [1, 3, '臨済宗を日本に伝えた僧は？', '栄西', '', 'p'],
+  [1, 3, '曹洞宗を伝え永平寺を開いた僧は？', '道元', '只管打坐', 'p'], [1, 3, '能を大成した、観阿弥の子は？', '世阿弥', '', 'p'],
+  [1, 3, '銀閣を建てた8代将軍は？', '足利義政', '応仁の乱のときの将軍', 'p'], [1, 3, '水墨画を大成した人物は？', '雪舟', '', 'p'],
+  [1, 3, '元寇に対処した鎌倉幕府の執権は？', '北条時宗', '', 'p'],
+  [1, 1, '古代、豪族の墓として造られた大規模な墓は？', '古墳', '前方後円墳など', 't'], [1, 2, '現存する世界最古の木造建築の寺は？', '法隆寺', '聖徳太子ゆかり', 't'],
+  [1, 2, '710年に遷都された都は？', '平城京', '元明天皇', 't'], [1, 2, '農民に口分田を与えた制度は？', '班田収授法', '', 't'],
+  [1, 2, '唐に派遣された使節は？', '遣唐使', '', 't'], [1, 2, '菅原道真が大宰府に左遷された901年の事件は？', '昌泰の変', '', 't'],
+  [1, 2, '上皇が政治を行う形態は？', '院政', '', 't'], [1, 2, '939年に関東で起こった反乱は？', '平将門の乱', '', 't'],
+  [1, 3, '鎌倉幕府で御家人を統率した機関は？', '侍所', '', 't'], [1, 3, '室町幕府で将軍を補佐した最高職は？', '管領', '', 't'],
+  [1, 3, '守護が国内の武士を従え大名化した存在を何という？', '守護大名', '', 't'], [1, 3, '室町時代の農民が団結して作った自治組織は？', '惣', '', 't'],
+  [1, 3, '1428年に近畿で起こった、最初の大規模な土一揆は？', '正長の土一揆', '', 't'], [1, 3, '戦国大名が領国支配のために定めた法は？', '分国法', '', 't'],
+  [1, 1, '平城京に遷都した年は？', '710年', '', 'y'], [1, 2, '白村江の戦いが起こった年は？', '663年', '', 'y'],
+  [1, 2, '壬申の乱が起こった年は？', '672年', '', 'y'], [1, 2, '承久の乱が起こった年は？', '1221年', '', 'y'],
+  [1, 2, '建武の新政が始まった（建武元年）年は？', '1334年', '', 'y'], [1, 3, '応仁の乱が終わった年は？', '1477年', '', 'y'],
+  [1, 3, '鉄砲が伝来した年は？', '1543年', '種子島', 'y'], [1, 3, 'キリスト教が伝来した年は？', '1549年', 'ザビエル', 'y'],
+  [2, 1, '本能寺の変で織田信長を討った武将は？', '明智光秀', '1582年', 'p'], [2, 1, 'キリスト教を日本に伝えたイエズス会の宣教師は？', 'フランシスコ・ザビエル', '1549年', 'p'],
+  [2, 2, '関ヶ原の戦いで西軍の中心となった人物は？', '石田三成', '', 'p'], [2, 2, '歌舞伎の始祖とされる人物は？', '出雲阿国', '', 'p'],
+  [2, 2, '「奥の細道」の作者は？', '松尾芭蕉', '元禄文化の俳諧', 'p'], [2, 2, '「曽根崎心中」などの浄瑠璃脚本家は？', '近松門左衛門', '', 'p'],
+  [2, 2, '「日本永代蔵」などを書いた浮世草子の作者は？', '井原西鶴', '', 'p'], [2, 3, '「東海道五十三次」を描いた浮世絵師は？', '歌川広重', '', 'p'],
+  [2, 3, '「富嶽三十六景」を描いた浮世絵師は？', '葛飾北斎', '', 'p'], [2, 3, '「解体新書」を翻訳した人物の一人は？', '杉田玄白', '', 'p'],
+  [2, 3, '全国の沿岸を測量して日本地図を作った人物は？', '伊能忠敬', '', 'p'], [2, 3, '「古事記伝」を著した国学者は？', '本居宣長', '', 'p'],
+  [2, 3, '「東海道中膝栗毛」の作者は？', '十返舎一九', '', 'p'], [2, 3, '1792年に根室に来航したロシア使節は？', 'ラクスマン', '', 'p'],
+  [2, 1, '田畑の面積や耕作者を調べた豊臣秀吉の政策は？', '太閤検地', '', 't'], [2, 1, '農民から武器を取り上げた豊臣秀吉の政策は？', '刀狩', '', 't'],
+  [2, 2, '織田信長が安土で行った商業政策は？', '楽市・楽座', '', 't'], [2, 2, 'キリスト教徒を見つけるために行った、絵を踏ませる行為は？', '絵踏', '', 't'],
+  [2, 2, '長崎の出島で幕府と貿易を続けたヨーロッパの国は？', 'オランダ', '', 't'], [2, 2, '江戸幕府の政務を統括した常置の最高職は？', '老中', '', 't'],
+  [2, 2, '江戸時代、「天下の台所」と呼ばれた都市は？', '大坂', '', 't'], [2, 3, '享保の改革で定められた裁判の基準となる法典は？', '公事方御定書', '', 't'],
+  [2, 3, '寛政の改革で出された、旗本・御家人の借金を帳消しにする令は？', '棄捐令', '', 't'], [2, 3, '天保の改革で出された、農民を村に帰す法は？', '人返しの法', '', 't'],
+  [2, 3, '1825年に出された、外国船の撃退を命じた令は？', '異国船打払令', '', 't'], [2, 3, '生麦事件の報復としてイギリスが鹿児島を攻撃した戦争は？', '薩英戦争', '1863年', 't'],
+  [2, 3, '豊臣秀吉が1592年に始めた朝鮮出兵を何という？', '文禄の役', '', 't'],
+  [2, 1, '江戸幕府が成立した年は？', '1603年', '', 'y'], [2, 2, '大坂夏の陣で豊臣氏が滅亡した年は？', '1615年', '', 'y'],
+  [2, 2, '享保の改革が始まった年は？', '1716年', '', 'y'], [2, 2, '寛政の改革が始まった年は？', '1787年', '', 'y'],
+  [2, 3, '天保の改革が始まった年は？', '1841年', '', 'y'], [2, 3, '桜田門外の変が起こった年は？', '1860年', '', 'y'],
+  [2, 3, '大政奉還が行われた年は？', '1867年', '', 'y'], [2, 3, '戊辰戦争が始まった年は？', '1868年', '', 'y'],
+  [3, 1, '「学問のすゝめ」を著した人物は？', '福沢諭吉', '', 'p'], [3, 1, '初代の文部大臣になった人物は？', '森有礼', '', 'p'],
+  [3, 2, '西南戦争を起こした人物は？', '西郷隆盛', '1877年', 'p'], [3, 2, '下関条約で清側全権を務めた人物は？', '李鴻章', '1895年', 'p'],
+  [3, 2, '1911年に関税自主権の回復に成功した外務大臣は？', '小村寿太郎', '', 'p'], [3, 2, '足尾銅山鉱毒事件を訴えた衆議院議員は？', '田中正造', '', 'p'],
+  [3, 3, '「民本主義」を唱えた政治学者は？', '吉野作造', '', 'p'], [3, 3, '1918年に本格的な政党内閣を組織した首相は？', '原敬', '', 'p'],
+  [3, 3, '五・一五事件で暗殺された首相は？', '犬養毅', '1932年', 'p'], [3, 2, '1894年に領事裁判権の撤廃に成功した外務大臣は？', '陸奥宗光', '', 'p'],
+  [3, 1, '1868年に出された新政府の基本方針は？', '五箇条の御誓文', '', 't'], [3, 1, '1872年に公布された学校制度の法令は？', '学制', '', 't'],
+  [3, 2, '群馬に作られた官営模範工場は？', '富岡製糸場', '1872年', 't'], [3, 2, '1881年に10年後の国会開設を約束した詔は？', '国会開設の勅諭', '', 't'],
+  [3, 2, '朝鮮の農民反乱をきっかけに1894年に始まった戦争は？', '日清戦争', '', 't'], [3, 2, '1895年にロシアなどが遼東半島の返還を要求した事件は？', '三国干渉', '', 't'],
+  [3, 2, '1902年に日本がイギリスと結んだ同盟は？', '日英同盟', '', 't'], [3, 3, '1910年に日本が朝鮮を植民地にした出来事は？', '韓国併合', '', 't'],
+  [3, 3, '1918年に米価の高騰から全国に広がった騒動は？', '米騒動', '', 't'], [3, 3, '1931年に関東軍が満州で起こした事件は？', '柳条湖事件', '満州事変の始まり', 't'],
+  [3, 3, '1940年に結ばれた、日本・ドイツ・イタリアの同盟は？', '日独伊三国同盟', '', 't'], [3, 3, '日中戦争のきっかけとなった1937年の事件は？', '盧溝橋事件', '', 't'],
+  [3, 3, '1947年に制定された教育の基本を定めた法律は？', '教育基本法', '', 't'], [3, 3, '1950年に始まった、日本の特需景気の背景となった戦争は？', '朝鮮戦争', '', 't'],
+  [3, 3, '1956年に調印された、日ソの国交を回復した宣言は？', '日ソ共同宣言', '', 't'],
+  [3, 3, '太平洋戦争が始まった年は？', '1941年', '', 'y'], [3, 3, 'ポツダム宣言を受諾し降伏した年は？', '1945年', '', 'y'],
+  [3, 3, '日本国憲法が公布された年は？', '1946年', '', 'y'], [3, 3, 'サンフランシスコ平和条約が結ばれた年は？', '1951年', '', 'y'],
+  [3, 3, '日韓基本条約が結ばれた年は？', '1965年', '', 'y'], [3, 3, '沖縄が日本に復帰した年は？', '1972年', '', 'y'],
+)
 export function gen(M, op, b) {
   const sx = SUBJ[M]
   if (sx && sx.pool) { const [m, o] = sx.pool[op - 1]; return gen(m, o, Math.min(6, b + sx.shift)) }
   const L = Math.ceil(b / 2)
-  if (M === 'S') return genS(op >= 5 ? rd(4) : op, L + 1)
-  if (M === 'J') return genJ(op === 6 ? rd(5) : op, L)
-  if (M === 'H') return genH(op === 6 ? rd(5) : op, L)
-  if (M === 'III') return gen3(op === 6 ? rd(5) : op, L)
-  if (M === 'A') return genA(op === 6 ? rd(5) : op, L)
-  if (M === 'CH') return genC(op === 6 ? rd(5) : op, L)
+  if (M === 'S') { const o = op === 6 ? rd(5) : op; return o === 5 ? xS(5, L + 1) : pick('S', o, L + 1, genS) }
+  if (M === 'J') return pick(M, op === 6 ? rd(5) : op, L, genJ)
+  if (M === 'H') return pick(M, op === 6 ? rd(5) : op, L, genH)
+  if (M === 'III') return pick(M, op === 6 ? rd(5) : op, L, gen3)
+  if (M === 'A') return pick(M, op === 6 ? rd(5) : op, L, genA)
+  if (M === 'CH') return pick(M, op === 6 ? rd(5) : op, L, genC)
   if (M === 'JH') return genJH(op, L)
   if (M === 'G') return genG(op >= 5 ? rd(4) : op, L)
   return genW(M, op >= 5 ? rd(4) : op, L)
 }
 export const ansText = (pr) => (pr.ch ? pr.ch[pr.a] : pr.a)
- 
+
 export const cur = (S) => {
   const o = S.half, d = 1 - o
   return { o, d, bat: S.t[o].pl[S.bi[o] % S.t[o].pl.length], pit: S.t[d].pl[(S.inn - 1) % S.t[d].pl.length] }
 }
- 
+
 // 待合室の参加者から試合を作る（足りない分はAIで4人にそろえる）。d.m は「科目.AIレベル」例 H.3
 export function buildGame(d) {
   const [M, lv] = (d.m || 'S.2').split('.')
@@ -333,14 +611,14 @@ export function buildGame(d) {
   t.forEach((x, i) => { for (let j = 1; x.pl.length < 4; j++) x.pl.push('AI-' + 'AB'[i] + j) })
   return { t, sc: [0, 0], inn: 1, N: d.n, half: 0, outs: 0, bases: [0, 0, 0], bi: [0, 0], ph: 'roll', msg: '', ev: '', cur: null, M, lv: +lv || 2, who, hostId: d.host, n: 0 }
 }
- 
+
 function adv(S, n) {
   let runs = 0; const nb = [0, 0, 0]
   if (n === 4) runs = S.bases.filter(Boolean).length + 1
   else { for (let i = 2; i >= 0; i--) if (S.bases[i]) { const t = i + n; t >= 3 ? runs++ : (nb[t] = 1) } nb[n - 1] = 1 }
   S.bases = nb; S.sc[S.half] += runs; return runs
 }
- 
+
 export function resolve(S0, win, pre) {
   const S = structuredClone(S0), { o, bat } = cur(S), c = S.cur
   let m = pre ? pre + ' ' : ''
@@ -358,7 +636,7 @@ export function resolve(S0, win, pre) {
   }
   S.ph = 'roll'; S.msg = m; return S
 }
- 
+
 export function doRoll(S0) {
   const S = structuredClone(S0), { d, pit } = cur(S), p = rd(6), b = rd(6), sp = SP[p + '-' + b]
   const defs = S.t[d].pl.filter((x) => x !== pit)
@@ -376,4 +654,3 @@ export function doRoll(S0) {
   }
   S.ph = 'duel'; S.msg = ''; return S
 }
- 
