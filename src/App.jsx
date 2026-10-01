@@ -203,7 +203,7 @@ function Game({ doc, api, me, onLeave }) {
   useEffect(() => {
     if (me !== S.hostId || S.ph === 'end') return
     const ts = [], at = (f, ms) => ts.push(setTimeout(f, ms))
-    if (S.ph === 'roll') { if (!hasHuman) at(() => api.write(doRoll(S)), 700) }
+    if (S.ph === 'roll') { if (!hasHuman && !S.hold) at(() => api.write(doRoll(S)), 700) }
     else {
       const aiB = !human(bat), aiO = !human(c.opp), both = aiB && aiO
       if (c.sp === 'j') {
@@ -256,7 +256,9 @@ function Game({ doc, api, me, onLeave }) {
           <p>🏏 打者：<b>{bat}</b>（{T[o].name}）／ 🛡 ピッチャー：<b>{pit}</b></p>
           {S.ph === 'roll' ? (canRoll
             ? <button onClick={() => api.write(doRoll(S))}>🎲 さいころを振る</button>
-            : <p className="mut">{bat}のさいころを待っています…</p>) : (
+            : S.hold && !hasHuman && myT >= 0
+              ? <button onClick={() => api.write(doRoll(S))}>▶ 次の打席へ（{T[o].name}の攻撃）</button>
+              : <p className="mut">{bat}のさいころを待っています…</p>) : (
             <>
               <div className="dice" key={S.n}>
                 <div className="dw"><Die v={c.p} />ピッチャー</div>
@@ -326,7 +328,7 @@ export default function App() {
   return (
     <main>
       <div className="hd">
-        <h1><span className="neon">BASEBALL</span><span className="neon2">× 計算バトル ⚾ </span></h1>
+        <h1><span className="neon">BASEBALL</span><span className="neon2">× 計算バトル ⚾ ナイトゲーム</span></h1>
         <div className="aud">
           <button className="ic" title="BGM" onClick={() => { unlock(); const v = !bgm; setBgm(v); setB(v) }}>{bgm ? '🎵' : '🔇'}</button>
           <button className="ic" title="効果音" onClick={() => { unlock(); const v = !se; setSe(v); setS(v) }}>{se ? '🔊' : '🔈'}</button>
