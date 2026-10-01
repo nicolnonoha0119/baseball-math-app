@@ -10,20 +10,28 @@ async function fetchDoc(code) {
 }
 
 function remote(code) {
+  let refresh = () => {}
+  // 書き込んだらすぐ最新の状態を読み直す（Realtimeが動いていなくても、自分の画面は進む）
+  const done = async (p) => { const r = await p; if (r && r.error) console.error(r.error); refresh(); return r }
   return {
     code,
+    fetch: () => fetchDoc(code),
     subscribe(cb) {
-      const load = async () => { const d = await fetchDoc(code); if (d) cb(d) }
+      let alive = true
+      const load = async () => { try { const d = await fetchDoc(code); if (alive && d) cb(d) } catch (e) { console.error(e) } }
+      refresh = load
       load()
+      // Realtimeに加えて、2秒ごとの確認も行う（Realtimeの設定が無効でも、ほかの人の動きが届く）
+      const poll = setInterval(load, 2000)
       const ch = supabase.channel('room-' + code)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: `code=eq.${code}` }, load)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'room_players', filter: `room_code=eq.${code}` }, load)
         .subscribe()
-      return () => supabase.removeChannel(ch)
+      return () => { alive = false; clearInterval(poll); supabase.removeChannel(ch) }
     },
-    start: (s) => supabase.from('rooms').update({ s }).eq('code', code),
-    write: (s) => supabase.from('rooms').update({ s, hb: null, hd: null }).eq('code', code),
-    hand: (k, v) => supabase.from('rooms').update({ [k]: v }).eq('code', code),
+    start: (s) => done(supabase.from('rooms').update({ s }).eq('code', code)),
+    write: (s) => done(supabase.from('rooms').update({ s, hb: null, hd: null }).eq('code', code)),
+    hand: (k, v) => done(supabase.from('rooms').update({ [k]: v }).eq('code', code)),
   }
 }
 
