@@ -3,6 +3,14 @@ import { SUBJ, LV, ACC_TEXT, OPP, AIL, SP, SPN, SPI, cur, buildGame, doRoll, res
 import { createRoom, joinRoom, localRoom } from './online'
 import './App.css'
 
+const MENU = [
+  ['算盤', [['S', 'そろばん']]],
+  ['数学', [['J', '中学'], ['H', '高校'], ['A', '数学A'], ['III', '数学III'], ['U1', '共通テスト'], ['U2', 'MARCH・関関同立'], ['U3', '早慶・旧帝大'], ['U4', '東大・京大']]],
+  ['英語', [['W3', '英検準2級'], ['W2', '英検2級'], ['WP1', '英検準1級'], ['W1', '英検1級'], ['G', '高校英文法'], ['E1', '共通テスト'], ['E2', 'MARCH・関関同立'], ['E3', '早慶・難関国立']]],
+  ['国語', [['K', '古文単語'], ['KJ', '漢字の読み']]],
+  ['理科', [['CH', '化学計算']]],
+  ['社会', [['JH', '日本史']]],
+]
 const H = ['✊', '✌️', '✋']
 const rd3 = () => Math.floor(Math.random() * 3)
 const getId = () => {
@@ -192,9 +200,11 @@ function Game({ doc, api, me, onLeave }) {
 export default function App() {
   const me = getId()
   const [name, setName] = useState(localStorage.getItem('bm-name') || '')
-  const [M, setM] = useState('S'), [N, setN] = useState(3), [lv, setLv] = useState(2), [code, setCode] = useState('')
+  const [M, setM] = useState(localStorage.getItem('bm-M') || 'S'), [N, setN] = useState(3), [lv, setLv] = useState(2), [code, setCode] = useState('')
   const [api, setApi] = useState(null), [doc, setDoc] = useState(null), [err, setErr] = useState('')
   const m = `${M}.${lv}`
+  const cat = Math.max(0, MENU.findIndex(([, l]) => l.some(([k]) => k === M)))
+  const pick = (k) => { setM(k); localStorage.setItem('bm-M', k) }
 
   useEffect(() => { if (!api) return; return api.subscribe(setDoc) }, [api])
 
@@ -220,10 +230,9 @@ export default function App() {
         <>
           <div className="card">
             <input placeholder="あなたの名前" value={name} onChange={(e) => setName(e.target.value)} />
-            <select value={M} onChange={(e) => setM(e.target.value)}>
-              <optgroup label="計算">{['S', 'J', 'H', 'III'].map((k) => <option key={k} value={k}>{SUBJ[k].n}</option>)}</optgroup>
-              <optgroup label="英語">{['W3', 'W2', 'WP1', 'W1', 'G'].map((k) => <option key={k} value={k}>{SUBJ[k].n}</option>)}</optgroup>
-            </select>
+            <div className="chips">{MENU.map(([name, l], i) => <button key={name} className={'chip' + (i === cat ? ' on' : '')} onClick={() => pick(l[0][0])}>{name}</button>)}</div>
+            <div className="chips">{MENU[cat][1].map(([k, name]) => <button key={k} className={'chip' + (k === M ? ' on' : '')} onClick={() => pick(k)}>{name}</button>)}</div>
+            <p className="mut">選択中：<b>{SUBJ[M].n}</b></p>
             <div className="row">
               <select value={lv} onChange={(e) => setLv(+e.target.value)}>{[1, 2, 3, 4, 5].map((l) => <option key={l} value={l}>AI：{LV[l]}</option>)}</select>
               <select value={N} onChange={(e) => setN(+e.target.value)}>{[1, 2, 3, 5, 9].map((n) => <option key={n} value={n}>{n}イニング</option>)}</select>
