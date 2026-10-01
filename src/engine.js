@@ -3,7 +3,9 @@ export const LV = ['', '優しい', '普通', '難しい', '鬼', '神']
 const ACC = [0, 0.4, 0.65, 0.82, 0.94, 0.995] // AIレベル別の正解率
 const TM = [0, 1.7, 1.2, 0.85, 0.55, 0.28]    // AIレベル別の解答時間の倍率
 const DIF = ['基礎', '標準', '発展']
-const WT = ['', '英→和', '和→英', '英→和', '和→英', 'ランダム', 'ランダム']
+const wt = (a, b) => ['', a, b, a, b, 'ランダム', 'ランダム']
+const WT = wt('英→和', '和→英')
+const MC = new Set(['W3', 'W2', 'WP1', 'W1', 'G', 'K', 'KJ', 'JH']) // 4択の科目
 export const SUBJ = {
   S: { n: 'そろばん', t: ['', '掛け算', '見取算（加減算）', '割り算', '開平（√）', 'ランダム', 'ランダム'], d: ['2桁', '3桁', '4桁'] },
   J: { n: '中学数学', t: ['', '正負の数・累乗', '一次方程式', '連立方程式', '二次方程式', '平方根の計算', 'ランダム'], d: DIF },
@@ -13,8 +15,25 @@ export const SUBJ = {
   W2: { n: '英検2級 単語', t: WT, d: ['易', '標準', '難'] },
   WP1: { n: '英検準1級 単語', t: WT, d: ['易', '標準', '難'] },
   W1: { n: '英検1級 単語', t: WT, d: ['易', '標準', '難'] },
+  A: { n: '数学A（場合の数・整数）', t: ['', '順列・組合せ', '円順列・重複順列', '同じものを含む順列', '整数（約数・倍数）', 'さいころ・玉', 'ランダム'], d: DIF },
+  CH: { n: '化学計算（理論化学）', t: ['', '物質量', '気体の体積', 'モル濃度', '化学反応式の量', '質量パーセント濃度', 'ランダム'], d: DIF },
+  K: { n: '古文単語', t: wt('古語→意味', '意味→古語'), d: ['易', '標準', '難'] },
+  KJ: { n: '漢字の読み（入試頻出）', t: wt('漢字→読み', '読み→漢字'), d: ['易', '標準', '難'] },
+  JH: { n: '日本史 一問一答', t: ['', '古代・中世', '近世', '近代', 'ランダム', 'ランダム', 'ランダム'], d: DIF },
   G: { n: '高校英文法', t: ['', '時制', '関係詞・接続詞', '助動詞・仮定法', '前置詞・語法', 'ランダム', 'ランダム'], d: DIF },
 }
+// 大学レベル別の科目：ピッチャーの目ごとに（科目, 問題の種類）を割り当て、バッターの目に shift を足して難しくする
+// ※レベルはあくまで目安で、実際の入試の出題と一致するわけではありません
+const MIX = (n, shift, pool, mc) => ({ n, shift, pool, mc, d: ['易', '標準', '難'], t: [] })
+SUBJ.U1 = MIX('数学 共通テストレベル', 0, [['H', 1], ['H', 2], ['H', 3], ['H', 4], ['A', 1], ['A', 5]])
+SUBJ.U2 = MIX('数学 MARCH・関関同立レベル', 1, [['H', 1], ['H', 5], ['H', 4], ['A', 2], ['A', 4], ['III', 1]])
+SUBJ.U3 = MIX('数学 早慶・旧帝大レベル', 2, [['III', 2], ['III', 3], ['H', 4], ['A', 3], ['H', 2], ['III', 4]])
+SUBJ.U4 = MIX('数学 東大・京大レベル', 3, [['III', 2], ['III', 3], ['III', 4], ['III', 5], ['A', 3], ['H', 3]])
+SUBJ.E1 = MIX('英語 共通テストレベル', 0, [['W2', 1], ['W2', 2], ['G', 1], ['G', 2], ['G', 3], ['G', 4]], true)
+SUBJ.E2 = MIX('英語 MARCH・関関同立レベル', 1, [['W2', 1], ['W2', 2], ['WP1', 1], ['G', 1], ['G', 3], ['G', 4]], true)
+SUBJ.E3 = MIX('英語 早慶・難関国立レベル', 2, [['WP1', 1], ['WP1', 2], ['W1', 1], ['G', 2], ['G', 3], ['G', 4]], true)
+for (const k of ['U1', 'U2', 'U3', 'U4', 'E1', 'E2', 'E3']) SUBJ[k].t = ['', ...SUBJ[k].pool.map(([m, o]) => `${SUBJ[m].n}：${SUBJ[m].t[o]}`)]
+const isMC = (M) => MC.has(M) || !!(SUBJ[M].pool && SUBJ[M].mc)
 export const OPP = ['', 'ピッチャー', 'キャッチャー', '内野手', '外野手', '守備の誰か（ランダム）', '守備の誰か（ランダム）']
 export const AIL = [0, 3, 2, 2, 1, 2, 3] // 対戦相手ごとのAIの強さ（★）
 export const ACC_TEXT = (lv) => `正解率 約${Math.round(ACC[lv] * 100)}％・解答の速さ ${['', 'とても遅い', '遅め', 'ふつう', '速い', '超高速'][lv]}`
@@ -24,12 +43,12 @@ export const SPN = { j: '✊ じゃんけん勝負', w: '🏳 不戦勝（自動
 export const SPI = { j: '✊', w: '🏳', l: '💀', b: '🎲' }
 const BONUS = [0, 1, 1, 2, 2, 3, 4], BN = ['', '単打', '単打', '二塁打', '二塁打', '三塁打', 'ホームラン']
 const SB = { 2: '₂', 3: '₃', 5: '₅', 6: '₆', 7: '₇', 10: '₁₀' }
-
+ 
 export const rd = (n) => 1 + Math.floor(Math.random() * n)
 const rnd = (d) => { const lo = d <= 1 ? 1 : 10 ** (d - 1), hi = 10 ** Math.max(d, 1) - 1; return lo + Math.floor(Math.random() * (hi - lo + 1)) }
 const sg = (n, v = '') => (n < 0 ? '－ ' : '＋ ') + (Math.abs(n) === 1 && v ? '' : Math.abs(n)) + v
 const shuf = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] } return a }
-
+ 
 // ---------- そろばん ----------
 function genS(op, d) {
   if (op === 1) { const a = rnd(d), b = rnd(2); return { q: `${a} × ${b}`, a: a * b, e: `${a}×${b}＝${a * b}` } }
@@ -145,12 +164,16 @@ const WB = {
   WP1: wb('abandon:放棄する,accumulate:蓄積する,adequate:十分な,ambiguous:あいまいな,candidate:候補者,coincide:同時に起こる,consequence:結果,deteriorate:悪化する,elaborate:手の込んだ,hostile:敵意のある,inevitable:避けられない,legitimate:合法の,mundane:平凡な,notorious:悪名高い,plausible:もっともらしい,reluctant:気が進まない,substantial:相当な,vulnerable:傷つきやすい'),
   W1: wb('aberration:逸脱,acquiesce:黙従する,ameliorate:改善する,belligerent:好戦的な,capricious:気まぐれな,deleterious:有害な,ephemeral:はかない,fastidious:気難しい,garrulous:多弁な,impeccable:非の打ちどころのない,lucid:明快な,meticulous:細心の,obsolete:時代遅れの,pragmatic:実利的な,recalcitrant:反抗的な,sycophant:おべっか使い,tenacious:粘り強い,ubiquitous:至る所にある'),
 }
+WB.K = wb('あはれなり:しみじみと趣深い,をかし:趣がある・おもしろい,いと:たいそう・とても,やがて:すぐに・そのまま,つれづれなり:退屈だ,ありがたし:めったにない,いみじ:はなはだしい・ひどい,かなし:いとしい・かわいい,わろし:よくない,あさまし:驚きあきれる,おどろく:はっと気づく,ののしる:大声で騒ぐ,めでたし:すばらしい,ゆかし:見たい・知りたい,あやし:不思議だ・怪しい,つとめて:早朝,ながむ:物思いにふける,はしたなし:きまりが悪い')
+WB.KJ = wb('脆弱:ぜいじゃく,概ね:おおむね,忌避:きひ,懸念:けねん,顕著:けんちょ,齟齬:そご,逸脱:いつだつ,示唆:しさ,享受:きょうじゅ,恣意:しい,払拭:ふっしょく,拘泥:こうでい,斡旋:あっせん,漸進:ぜんしん,奔走:ほんそう,如実:にょじつ,杞憂:きゆう,蓋然:がいぜん')
+const PR = { K: ['の意味は？', 'にあたる古語は？'], KJ: ['の読みは？', 'と読む語は？'] }
 function genW(M, op, L) {
   const bank = WB[M], th = bank.length / 3, pool = bank.slice(Math.floor((L - 1) * th), Math.floor(L * th))
   const w = pool[rd(pool.length) - 1], toJa = op % 2 === 1, i = toJa ? 0 : 1
   const others = shuf(bank.filter((x) => x !== w)).slice(0, 3).map((x) => x[1 - i])
   const ch = shuf([w[1 - i], ...others])
-  return { q: toJa ? `「${w[0]}」の意味は？` : `「${w[1]}」を表す英単語は？`, ch, a: ch.indexOf(w[1 - i]), e: `${w[0]}＝${w[1]}` }
+  const pr = PR[M] || ['の意味は？', 'を表す英単語は？']
+  return { q: toJa ? `「${w[0]}」${pr[0]}` : `「${w[1]}」${pr[1]}`, ch, a: ch.indexOf(w[1 - i]), e: `${w[0]}＝${w[1]}` }
 }
 // ---------- 高校英文法 ----------
 const GB = [
@@ -177,23 +200,127 @@ function genG(op, L) {
   const g = l[rd(l.length) - 1], opts = g[3].split('|'), ch = shuf(opts)
   return { q: g[2], ch, a: ch.indexOf(opts[g[4]]), e: g[5] }
 }
-
+ 
+// ---------- 数学A ----------
+const fa = (n) => (n <= 1 ? 1 : n * fa(n - 1)), Pm = (n, r) => fa(n) / fa(n - r), Cm = (n, r) => fa(n) / (fa(r) * fa(n - r))
+function genA(op, L) {
+  if (op === 1) {
+    if (L === 1) { const n = rd(4) + 3; return { q: `${n}P2`, a: n * (n - 1), e: `${n}P2＝${n}×${n - 1}＝${n * (n - 1)}` } }
+    if (L === 2) { const n = rd(5) + 5, r = rd(2) + 2; return { q: `${n}C${r}`, a: Cm(n, r), e: `${n}C${r}＝${n}!÷(${r}!×${n - r}!)＝${Cm(n, r)}` } }
+    const n = rd(4) + 6, r = rd(3) + 2, m = rd(3) + 4
+    return { q: `${n}C${r} ＋ ${m}P3`, a: Cm(n, r) + Pm(m, 3), e: `${n}C${r}＝${Cm(n, r)}、${m}P3＝${Pm(m, 3)}。合計 ${Cm(n, r) + Pm(m, 3)}` }
+  }
+  if (op === 2) {
+    if (L === 1) { const n = rd(3) + 3; return { q: `${n}人が円卓に座る座り方は何通り？`, a: fa(n - 1), e: `円順列は (n－1)!＝${n - 1}!＝${fa(n - 1)}` } }
+    if (L === 2) { const n = rd(4) + 1; return { q: `${n}人が1回じゃんけんをするとき、手の出し方は何通り？`, a: 3 ** n, e: `1人3通りなので 3^${n}＝${3 ** n}` } }
+    const n = rd(2) + 4; return { q: `${n}人が円卓に座るとき、特定の2人が隣り合う座り方は何通り？`, a: 2 * fa(n - 2), e: `2人を1組と考え ${n - 1}人の円順列 (${n - 2})!、組の中の並び方 2通り。${2 * fa(n - 2)}` }
+  }
+  if (op === 3) {
+    if (L === 1) { const x = rd(3) + 1, y = rd(3) + 1; return { q: `a を${x}個、b を${y}個、1列に並べる並べ方は何通り？`, a: Cm(x + y, x), e: `${x + y}!÷(${x}!×${y}!)＝${Cm(x + y, x)}` } }
+    if (L === 2) { const [x, y, z] = [[2, 2, 1], [3, 2, 1], [2, 1, 1], [3, 1, 1]][rd(4) - 1]; return { q: `a を${x}個、b を${y}個、c を${z}個、1列に並べる並べ方は何通り？`, a: fa(x + y + z) / (fa(x) * fa(y) * fa(z)), e: `${x + y + z}!÷(${x}!×${y}!×${z}!)＝${fa(x + y + z) / (fa(x) * fa(y) * fa(z))}` } }
+    const a = rd(3) + 2, b = rd(3) + 2; return { q: `格子状の道を(0,0)から(${a},${b})まで最短で進む道順は何通り？`, a: Cm(a + b, a), e: `右${a}回・上${b}回の並べ方なので ${a + b}C${a}＝${Cm(a + b, a)}` }
+  }
+  if (op === 4) {
+    const g = rd(8) + 2, [p, q] = [[2, 3], [3, 4], [2, 5], [3, 5], [4, 5]][rd(5) - 1]
+    if (L === 1) return { q: `${g * p} と ${g * q} の最大公約数`, a: g, e: `${g * p}＝${g}×${p}、${g * q}＝${g}×${q}（${p}と${q}は互いに素）なので ${g}` }
+    if (L === 2) return { q: `${g * p} と ${g * q} の最小公倍数`, a: g * p * q, e: `${g}×${p}×${q}＝${g * p * q}` }
+    const i = rd(4), j = rd(3), k = rd(2) - 1, n = 2 ** i * 3 ** j * 5 ** k
+    return { q: `${n} の正の約数の個数`, a: (i + 1) * (j + 1) * (k + 1), e: `${n}＝2^${i}×3^${j}×5^${k} なので (${i}＋1)(${j}＋1)(${k}＋1)＝${(i + 1) * (j + 1) * (k + 1)}` }
+  }
+  if (L === 1) { const t = rd(11) + 1; let c = 0; for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) if (a + b === t) c++; return { q: `大小2個のさいころを投げて、目の和が${t}になる場合は何通り？`, a: c, e: `36通りのうち、和が${t}になる目の組を数えて ${c}通り` } }
+  if (L === 2) { const t = rd(12) + 3; let c = 0; for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) for (let d = 1; d <= 6; d++) if (a + b + d === t) c++; return { q: `3個のさいころを投げて、目の和が${t}になる出方は何通り？（区別あり）`, a: c, e: `216通りのうち、和が${t}になる目の組を数えて ${c}通り` } }
+  const r = rd(3) + 3, w = rd(3) + 3, j = rd(2) + 1
+  return { q: `赤玉${r}個、白玉${w}個から3個を同時に取り出すとき、赤玉をちょうど${j}個含む取り出し方は何通り？`, a: Cm(r, j) * Cm(w, 3 - j), e: `${r}C${j}×${w}C${3 - j}＝${Cm(r, j)}×${Cm(w, 3 - j)}＝${Cm(r, j) * Cm(w, 3 - j)}` }
+}
+// ---------- 化学計算（原子量 H=1, C=12, N=14, O=16, Na=23, Mg=24, S=32, Ca=40、標準状態の気体 22.4 L/mol）----------
+const SUBS = [['H₂O', 18, 1], ['CO₂', 44, 2], ['NaOH', 40, 1], ['CaCO₃', 100, 3], ['H₂SO₄', 98, 4]]
+function genC(op, L) {
+  const [f, M, nO] = SUBS[rd(5) - 1], k = rd(5)
+  if (op === 1) {
+    if (L === 1) return { q: `${M * k}g の ${f}（式量・分子量${M}）は何mol？`, a: k, e: `物質量＝質量÷モル質量＝${M * k}÷${M}＝${k}mol` }
+    if (L === 2) return { q: `${k}mol の ${f}（式量・分子量${M}）の質量は何g？`, a: M * k, e: `質量＝物質量×モル質量＝${k}×${M}＝${M * k}g` }
+    return { q: `${M * k}g の ${f}（式量・分子量${M}）に含まれる酸素原子は何mol？`, a: k * nO, e: `${M * k}÷${M}＝${k}mol。1つあたり酸素${nO}個なので ${k * nO}mol` }
+  }
+  if (op === 2) {
+    const V = (22.4 * k).toFixed(1)
+    if (L === 1) return { q: `標準状態で ${V}L の気体は何mol？`, a: k, e: `${V}÷22.4＝${k}mol` }
+    if (L === 2) return { q: `標準状態で ${V}L のCO₂（分子量44）は何g？`, a: 44 * k, e: `${V}÷22.4＝${k}mol。${k}×44＝${44 * k}g` }
+    const m = [[2, 'H₂'], [16, 'CH₄'], [32, 'O₂'], [44, 'CO₂']][rd(4) - 1]
+    return { q: `標準状態で ${V}L の気体の質量が ${m[0] * k}g のとき、この気体の分子量は？`, a: m[0], e: `${V}÷22.4＝${k}mol。分子量＝${m[0] * k}÷${k}＝${m[0]}` }
+  }
+  if (op === 3) {
+    if (L === 1) { const c = rd(5), v = rd(3) + 1; return { q: `${c * v}mol の溶質を水に溶かして ${v}L にした。モル濃度は何mol/L？`, a: c, e: `モル濃度＝物質量÷体積＝${c * v}÷${v}＝${c}mol/L` } }
+    if (L === 2) { const c = 2 * rd(4), mL = [500, 1000, 2000][rd(3) - 1]; return { q: `${c}mol/L の水溶液 ${mL}mL に含まれる溶質は何mol？`, a: (c * mL) / 1000, e: `${c}mol/L×${mL / 1000}L＝${(c * mL) / 1000}mol` } }
+    const [v, c] = [[500, 2 * k], [250, 4 * k], [1000, k]][rd(3) - 1]; return { q: `NaOH（式量40）${40 * k}g を水に溶かして ${v}mL にした。モル濃度は何mol/L？`, a: c, e: `${40 * k}÷40＝${k}mol。${k}mol÷${v / 1000}L＝${c}mol/L` }
+  }
+  if (op === 4) {
+    const a = rd(5)
+    if (L === 1) return { q: `2H₂ ＋ O₂ → 2H₂O　H₂ ${a}mol からできる H₂O は何mol？`, a, e: `係数比 H₂：H₂O＝2：2 なので ${a}mol` }
+    if (L === 2) return { q: `CH₄ ＋ 2O₂ → CO₂ ＋ 2H₂O　CH₄ ${a}mol を燃やすのに必要な O₂ は何mol？`, a: 2 * a, e: `係数比 CH₄：O₂＝1：2 なので ${2 * a}mol` }
+    return { q: `2Mg ＋ O₂ → 2MgO　Mg（原子量24）${24 * a}g と過不足なく反応する O₂（分子量32）は何g？`, a: 16 * a, e: `Mg ${a}mol。係数比 Mg：O₂＝2：1 なので O₂ ${a / 2}mol＝${16 * a}g` }
+  }
+  const p = [5, 10, 20, 25][rd(4) - 1], t = rd(4)
+  if (L === 1) return { q: `溶質${p * t}g と水${100 * t - p * t}g でできた溶液の質量パーセント濃度は何％？`, a: p, e: `${p * t}÷${100 * t}×100＝${p}％` }
+  if (L === 2) return { q: `${p}％の食塩水 ${100 * t}g に溶けている食塩は何g？`, a: p * t, e: `${100 * t}×${p}/100＝${p * t}g` }
+  const q = [10, 20, 30, 40][rd(4) - 1]
+  return { q: `${q}％の食塩水 ${100 * t}g に水を ${100 * t}g 加えると、濃度は何％？`, a: q / 2, e: `食塩は ${q * t}g のまま、全体が ${200 * t}g になるので ${q * t}÷${200 * t}×100＝${q / 2}％` }
+}
+// ---------- 日本史 一問一答（[時代, 難度, 問い, 答え, 解説, 種類]）----------
+const JHB = [
+  [1, 1, '鎌倉幕府を開き、初代将軍となった人物は？', '源頼朝', '1192年に征夷大将軍に任じられた', 'p'],
+  [1, 2, '承久の乱のあと、御成敗式目を定めた執権は？', '北条泰時', '1232年。武家社会で最初の体系的な法', 'p'],
+  [1, 1, '大化の改新を中大兄皇子とともに進めた人物は？', '中臣鎌足', 'のちに藤原の姓を賜った', 'p'],
+  [2, 1, '桶狭間の戦いで今川義元を破った人物は？', '織田信長', '1560年', 'p'],
+  [2, 1, '太閤検地や刀狩を行った人物は？', '豊臣秀吉', '土地と身分の支配を固めた', 'p'],
+  [2, 2, '享保の改革を行った8代将軍は？', '徳川吉宗', '上げ米・公事方御定書など', 'p'],
+  [2, 2, '寛政の改革を行った老中は？', '松平定信', '囲米・棄捐令など', 'p'],
+  [2, 3, '天保の改革を行った老中は？', '水野忠邦', '株仲間の解散・上知令など', 'p'],
+  [3, 1, '大政奉還を行った江戸幕府の15代将軍は？', '徳川慶喜', '1867年', 'p'],
+  [3, 2, '安政の大獄を行った大老は？', '井伊直弼', '1858年。桜田門外の変（1860）で暗殺', 'p'],
+  [3, 2, '初代の内閣総理大臣になった人物は？', '伊藤博文', '1885年、内閣制度の創設時', 'p'],
+  [3, 3, '日露戦争後のポーツマス条約で日本側全権を務めたのは？', '小村寿太郎', '1905年', 'p'],
+  [1, 1, '聖徳太子が制定した、才能に応じて役人に位を与える制度は？', '冠位十二階', '603年', 't'],
+  [1, 2, '藤原氏が摂政・関白として行った政治は？', '摂関政治', '天皇の外戚として実権を握った', 't'],
+  [2, 2, '江戸幕府が大名を統制するために定めた法は？', '武家諸法度', '将軍の代替わりごとに出された', 't'],
+  [3, 2, '1871年に藩を廃止して県を置いた政策は？', '廃藩置県', '中央集権化を進めた', 't'],
+  [3, 1, '1889年に発布された憲法は？', '大日本帝国憲法', '天皇が定める欽定憲法', 't'],
+  [1, 2, '応仁の乱が始まった年は？', '1467年', '戦国時代の始まりとされる', 'y'],
+  [2, 2, '関ヶ原の戦いが起こった年は？', '1600年', '徳川家康が勝利', 'y'],
+  [3, 2, '日米和親条約が結ばれた年は？', '1854年', 'ペリー来航の翌年。開国', 'y'],
+  [3, 1, '大日本帝国憲法が発布された年は？', '1889年', '', 'y'],
+  [1, 3, '平安京に都が移された年は？', '794年', '桓武天皇', 'y'],
+  [3, 3, '廃藩置県が行われた年は？', '1871年', '', 'y'],
+]
+function genJH(op, L) {
+  let l = JHB.filter((x) => x[0] === op && x[1] === L)
+  if (!l.length) l = JHB.filter((x) => op <= 3 && x[0] === op)
+  if (!l.length) l = JHB
+  const g = l[rd(l.length) - 1]
+  const ch = shuf([g[3], ...shuf([...new Set(JHB.filter((x) => x[5] === g[5] && x[3] !== g[3]).map((x) => x[3]))]).slice(0, 3)])
+  return { q: g[2], ch, a: ch.indexOf(g[3]), e: `${g[3]}${g[4] ? '：' + g[4] : ''}` }
+}
+ 
 export function gen(M, op, b) {
+  const sx = SUBJ[M]
+  if (sx && sx.pool) { const [m, o] = sx.pool[op - 1]; return gen(m, o, Math.min(6, b + sx.shift)) }
   const L = Math.ceil(b / 2)
   if (M === 'S') return genS(op >= 5 ? rd(4) : op, L + 1)
   if (M === 'J') return genJ(op === 6 ? rd(5) : op, L)
   if (M === 'H') return genH(op === 6 ? rd(5) : op, L)
   if (M === 'III') return gen3(op === 6 ? rd(5) : op, L)
+  if (M === 'A') return genA(op === 6 ? rd(5) : op, L)
+  if (M === 'CH') return genC(op === 6 ? rd(5) : op, L)
+  if (M === 'JH') return genJH(op, L)
   if (M === 'G') return genG(op >= 5 ? rd(4) : op, L)
   return genW(M, op >= 5 ? rd(4) : op, L)
 }
 export const ansText = (pr) => (pr.ch ? pr.ch[pr.a] : pr.a)
-
+ 
 export const cur = (S) => {
   const o = S.half, d = 1 - o
   return { o, d, bat: S.t[o].pl[S.bi[o] % S.t[o].pl.length], pit: S.t[d].pl[(S.inn - 1) % S.t[d].pl.length] }
 }
-
+ 
 // 待合室の参加者から試合を作る（足りない分はAIで4人にそろえる）。d.m は「科目.AIレベル」例 H.3
 export function buildGame(d) {
   const [M, lv] = (d.m || 'S.2').split('.')
@@ -206,14 +333,14 @@ export function buildGame(d) {
   t.forEach((x, i) => { for (let j = 1; x.pl.length < 4; j++) x.pl.push('AI-' + 'AB'[i] + j) })
   return { t, sc: [0, 0], inn: 1, N: d.n, half: 0, outs: 0, bases: [0, 0, 0], bi: [0, 0], ph: 'roll', msg: '', ev: '', cur: null, M, lv: +lv || 2, who, hostId: d.host, n: 0 }
 }
-
+ 
 function adv(S, n) {
   let runs = 0; const nb = [0, 0, 0]
   if (n === 4) runs = S.bases.filter(Boolean).length + 1
   else { for (let i = 2; i >= 0; i--) if (S.bases[i]) { const t = i + n; t >= 3 ? runs++ : (nb[t] = 1) } nb[n - 1] = 1 }
   S.bases = nb; S.sc[S.half] += runs; return runs
 }
-
+ 
 export function resolve(S0, win, pre) {
   const S = structuredClone(S0), { o, bat } = cur(S), c = S.cur
   let m = pre ? pre + ' ' : ''
@@ -231,7 +358,7 @@ export function resolve(S0, win, pre) {
   }
   S.ph = 'roll'; S.msg = m; return S
 }
-
+ 
 export function doRoll(S0) {
   const S = structuredClone(S0), { d, pit } = cur(S), p = rd(6), b = rd(6), sp = SP[p + '-' + b]
   const defs = S.t[d].pl.filter((x) => x !== pit)
@@ -241,7 +368,7 @@ export function doRoll(S0) {
   if (sp === 'l') return resolve(S, false, '不戦敗…')
   if (sp !== 'j') {
     c.pr = gen(S.M, p, b)
-    const st = AIL[b], D = Math.ceil(b / 2), lv = S.lv || 2, eng = S.M[0] === 'W' || S.M === 'G'
+    const st = AIL[b], D = Math.ceil(b / 2), lv = S.lv || 2, eng = isMC(S.M)
     c.pc = Math.min(0.999, ACC[lv] + (st - 2) * 0.04)
     c.aiT = (8 + 6 * D) * (eng ? 0.5 : 1) * TM[lv] * (1.3 - 0.15 * st) * (0.7 + 0.6 * Math.random())
     const base = S.M === 'S' ? 30 + 15 * D : eng ? (S.M === 'G' ? 15 + 5 * D : 12 + 4 * D) : 25 + 10 * D
@@ -249,3 +376,4 @@ export function doRoll(S0) {
   }
   S.ph = 'duel'; S.msg = ''; return S
 }
+ 
