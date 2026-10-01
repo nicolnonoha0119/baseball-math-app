@@ -20,26 +20,56 @@ const getId = () => {
 }
 
 function Rules({ M }) {
-  const s = SUBJ[M]
+  const [tab, setTab] = useState(''), [sub, setSub] = useState(M)
+  useEffect(() => setSub(M), [M])
+  const s = SUBJ[sub]
+  const TABS = [['how', '遊び方'], ['dice', 'さいころと問題'], ['sp', 'スペシャル'], ['ai', 'AIと制限時間']]
   return (
     <div className="card">
-      <h2>ルール表（{s.n}）</h2>
-      <div className="tw"><table>
-        <thead><tr><th>目</th><th>問題の種類<br />（ピッチャー）</th><th>難度<br />（バッター）</th><th>対戦相手<br />（バッター）</th><th>AI</th></tr></thead>
-        <tbody>{[1, 2, 3, 4, 5, 6].map((i) => (
-          <tr key={i}><td>{i}</td><td>{s.t[i]}</td><td>{s.d[Math.ceil(i / 2) - 1]}</td><td>{OPP[i]}</td><td>{'★'.repeat(AIL[i])}</td></tr>
-        ))}</tbody>
-      </table></div>
-      <p className="mut">スペシャル（縦：ピッチャー／横：バッター）</p>
-      <div className="tw"><table>
-        <thead><tr><th></th>{[1, 2, 3, 4, 5, 6].map((b) => <th key={b}>{b}</th>)}</tr></thead>
-        <tbody>{[1, 2, 3, 4, 5, 6].map((p) => (
-          <tr key={p}><th>{p}</th>{[1, 2, 3, 4, 5, 6].map((b) => <td key={b}>{SP[p + '-' + b] ? SPI[SP[p + '-' + b]] : '計算'}</td>)}</tr>
-        ))}</tbody>
-      </table></div>
-      <p className="mut">✊じゃんけん（勝てば単打・負ければアウト）／🏳不戦勝（単打）／💀不戦敗（アウト）／🎲勝てば追加ダイス（1-2単打・3-4二塁打・5三塁打・6ホームラン）</p>
-      <p className="mut">・計算に勝てば単打、負けるとアウト。3アウトで攻守交代。制限時間が0になると打者アウト。<br />
-        ・AIレベル：{[1, 2, 3, 4, 5].map((l) => `${LV[l]}（${ACC_TEXT(l)}）`).join(' ／ ')}。相手の役割の★が多いほど少し強くなります。</p>
+      <h2>📖 ルール</h2>
+      <div className="chips">{TABS.map(([k, n]) => <button key={k} className={'chip' + (tab === k ? ' on' : '')} onClick={() => setTab(tab === k ? '' : k)}>{n}</button>)}</div>
+      {!tab && <p className="mut">見たい項目を押してください。</p>}
+      {tab === 'how' && (
+        <ol>
+          <li>攻撃側の打者が、さいころを2つ（ピッチャー用・バッター用）振ります。</li>
+          <li>ピッチャーの目で問題の種類、バッターの目で難度と対戦相手が決まります。</li>
+          <li>打者と対戦相手が早い者勝ちで答えます。打者が先に正解すれば単打、間違い・相手が先に正解・時間切れならアウトです。</li>
+          <li>目の組み合わせによっては、じゃんけん・不戦勝などのスペシャルが起こります。</li>
+          <li>3アウトで攻守交代。決めたイニング数が終わったら得点の多いチームの勝ちです。</li>
+          <li>ひとりで遊ぶときは自分のチーム4人を全員自分が操作します。オンラインは1人1選手（最大8人）で、足りない分はAIが入ります。</li>
+        </ol>
+      )}
+      {tab === 'dice' && (
+        <>
+          <select value={sub} onChange={(e) => setSub(e.target.value)}>
+            {MENU.flatMap(([c, l]) => l.map(([k, n]) => <option key={k} value={k}>{c}：{n}</option>))}
+          </select>
+          <div className="tw"><table>
+            <thead><tr><th>目</th><th>問題の種類<br />（ピッチャー）</th><th>難度<br />（バッター）</th><th>対戦相手<br />（バッター）</th><th>AI</th></tr></thead>
+            <tbody>{[1, 2, 3, 4, 5, 6].map((i) => (
+              <tr key={i}><td>{i}</td><td>{s.t[i]}</td><td>{s.d[Math.ceil(i / 2) - 1]}</td><td>{OPP[i]}</td><td>{'★'.repeat(AIL[i])}</td></tr>
+            ))}</tbody>
+          </table></div>
+        </>
+      )}
+      {tab === 'sp' && (
+        <>
+          <p className="mut">縦：ピッチャーの目／横：バッターの目</p>
+          <div className="tw"><table>
+            <thead><tr><th></th>{[1, 2, 3, 4, 5, 6].map((b) => <th key={b}>{b}</th>)}</tr></thead>
+            <tbody>{[1, 2, 3, 4, 5, 6].map((p) => (
+              <tr key={p}><th>{p}</th>{[1, 2, 3, 4, 5, 6].map((b) => <td key={b}>{SP[p + '-' + b] ? SPI[SP[p + '-' + b]] : '計算'}</td>)}</tr>
+            ))}</tbody>
+          </table></div>
+          <p className="mut">✊じゃんけん（勝てば単打・負ければアウト）／🏳不戦勝（単打）／💀不戦敗（アウト）／🎲勝てば追加ダイス（1-2単打・3-4二塁打・5三塁打・6ホームラン）</p>
+        </>
+      )}
+      {tab === 'ai' && (
+        <>
+          <ul>{[1, 2, 3, 4, 5].map((l) => <li key={l}>{LV[l]}：{ACC_TEXT(l)}</li>)}</ul>
+          <p className="mut">対戦相手の役割の★が多いほど、AIは少し強くなります。制限時間が0になると打者アウトです。時間は科目と難度で変わります。</p>
+        </>
+      )}
     </div>
   )
 }
@@ -225,7 +255,7 @@ export default function App() {
 
   return (
     <main>
-      <h1>⚾ 野球×勉強バトル</h1>
+      <h1>⚾ 野球×計算バトル</h1>
       {!api ? (
         <>
           <div className="card">
