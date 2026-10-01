@@ -609,7 +609,7 @@ export function buildGame(d) {
     who[n] = p.id; t[p.team].pl.push(n)
   })
   t.forEach((x, i) => { for (let j = 1; x.pl.length < 4; j++) x.pl.push('AI-' + 'AB'[i] + j) })
-  return { t, sc: [0, 0], inn: 1, N: d.n, half: 0, outs: 0, bases: [0, 0, 0], bi: [0, 0], ph: 'roll', msg: '', ev: '', cur: null, M, lv: +lv || 2, who, hostId: d.host, n: 0 }
+  return { t, sc: [0, 0], inn: 1, N: d.n, half: 0, outs: 0, bases: [0, 0, 0], bi: [0, 0], ph: 'roll', msg: '', ev: '', line: [[], []], cur: null, M, lv: +lv || 2, who, hostId: d.host, n: 0 }
 }
 
 function adv(S, n) {
@@ -621,12 +621,13 @@ function adv(S, n) {
 
 export function resolve(S0, win, pre) {
   const S = structuredClone(S0), { o, bat } = cur(S), c = S.cur
+  S.line = S.line || [[], []]
   let m = pre ? pre + ' ' : ''
   if (c.pr) m += `【問題：${c.pr.q}／答え：${ansText(c.pr)}】\n解説：${c.pr.e}\n`
   if (win) {
     let n = 1, t = '単打'
     if (c.sp === 'b') { const d = rd(6); n = BONUS[d]; t = BN[d]; m += `ボーナスダイス「${d}」→` }
-    const r = adv(S, n); m += `${bat}は${t}！` + (r ? `${r}点入った！` : ''); S.ev = t
+    const r = adv(S, n); S.line[S.half][S.inn - 1] = (S.line[S.half][S.inn - 1] || 0) + r; m += `${bat}は${t}！` + (r ? `${r}点入った！` : ''); S.ev = t
   } else { S.outs++; m += `${bat}はアウト（${S.outs}アウト）`; S.ev = 'アウト' }
   S.bi[o]++; S.n++
   if (S.outs >= 3) {
