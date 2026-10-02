@@ -37,6 +37,7 @@ function Rules({ M }) {
           <li>打者と対戦相手が早い者勝ちで答えます。打者が先に正解すれば単打、間違い・相手が先に正解・時間切れならアウトです。</li>
           <li>目の組み合わせによっては、じゃんけん・不戦勝などのスペシャルが起こります。</li>
           <li>3アウトで攻守交代。決めたイニング数が終わったら得点の多いチームの勝ちです。</li>
+          <li>コールドゲーム：大きな点差がつくと途中で試合が終わります。9イニング制は5回に10点差・7回以降は7点差、5イニング制は3回に10点差・4回以降は7点差、3イニング制は2回に10点差・3回は7点差です（1〜2イニング制はなし）。後攻は、裏の攻撃中に点差が開いた時点でも終了です。</li>
           <li>ひとりで遊ぶときは自分のチーム4人を全員自分が操作します。オンラインは1人1選手（最大8人）で、足りない分はAIが入ります。</li>
         </ol>
       )}
@@ -120,7 +121,7 @@ function Scoreboard({ S, T, end }) {
     const v = S.line && S.line[t] ? S.line[t][i] : null
     if (v != null) return v
     if (i < S.inn - 1) return 0
-    if (i === S.inn - 1) return t < S.half || (t === S.half && !end) ? 0 : ''
+    if (i === S.inn - 1) return t < S.half || (t === S.half && (!end || S.cold)) ? 0 : ''
     return ''
   }
   return (
@@ -249,7 +250,7 @@ function Game({ doc, api, me, onLeave }) {
       </div>
       {S.msg && <div className="card msg">{S.msg}</div>}
       {end ? (
-        <div className="card"><div className="chalk">{S.sc[0] > S.sc[1] ? T[0].name + ' の勝ち！' : S.sc[1] > S.sc[0] ? T[1].name + ' の勝ち！' : '引き分け'}</div><button onClick={onLeave}>最初に戻る</button></div>
+        <div className="card"><div className="chalk">{S.cold ? '⚡ コールドゲーム！ ' : ''}{S.sc[0] > S.sc[1] ? T[0].name + ' の勝ち！' : S.sc[1] > S.sc[0] ? T[1].name + ' の勝ち！' : '引き分け'}</div><button onClick={onLeave}>最初に戻る</button></div>
       ) : (
         <div className="card">
           {myNames.length > 0 && <p className="mut">あなた：{myNames.length > 1 ? `${T[myT].name}の全員（${myNames.join('・')}）を操作` : `${myNames[0]}（${T[myT].name}）`}</p>}
