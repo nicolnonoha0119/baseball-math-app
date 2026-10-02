@@ -171,6 +171,7 @@ function Lobby({ doc, api, me }) {
           ))}
         </div>
         {host && <button className="sub" onClick={() => api.shuffle()}>🔀 ランダムにチーム分け</button>}
+        {host && <button className="sub" onClick={() => api.swapTeams()}>⇄ 先攻・後攻を入れ替える</button>}
         <p className="mut">{host ? '名前の横のボタンで、チームを移せます。' : 'チーム分けは、部屋を作った人が決めます。'}各チーム4人になるまで、足りない分はAIが入ります。</p>
         {host ? <button onClick={start}>試合開始（足りない分はAI）</button>
           : <p className="mut">部屋を作った人が開始するのを待っています…</p>}
