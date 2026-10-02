@@ -329,7 +329,7 @@ export default function App() {
   return (
     <main>
       <div className="hd">
-        <h1><span className="neon">BASEBALL</span><span className="neon2">× 計算バトル ⚾ ナイトゲーム</span></h1>
+        <h1><span className="neon">BASEBALL</span><span className="neon2">× 計算バトル ⚾ </span></h1>
         <div className="aud">
           <button className="ic" title="BGM" onClick={() => { unlock(); const v = !bgm; setBgm(v); setB(v) }}>{bgm ? '🎵' : '🔇'}</button>
           <button className="ic" title="効果音" onClick={() => { unlock(); const v = !se; setSe(v); setS(v) }}>{se ? '🔊' : '🔈'}</button>
