@@ -72,3 +72,5 @@ details summary{cursor:pointer;font-weight:700;margin:6px 0}
 .tbar{height:10px;background:rgba(255,255,255,.12);border-radius:5px;overflow:hidden}
 .tbar div{height:100%;background:linear-gradient(90deg,#ffc933,#ff8a00);transition:width .25s linear}
 .tbar.warn div{background:#ff3b3b}
+button.mv{padding:2px 10px;margin:0 0 0 8px;font-size:12px;box-shadow:none}
+button:disabled{opacity:.35;cursor:default}
