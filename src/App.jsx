@@ -144,6 +144,12 @@ function Scoreboard({ S, T, end }) {
 function Lobby({ doc, api, me }) {
   const col = (t) => doc.players.filter((p) => p.team === t)
   const [M, lv] = (doc.m || 'S.2').split('.')
+  const host = doc.host === me
+  const start = async () => {
+    const fresh = (api.fetch && (await api.fetch())) || doc
+    const r = await api.start(buildGame(fresh))
+    if (r && r.error) alert('開始できませんでした：' + r.error.message)
+  }
   return (
     <>
       <div className="card">
@@ -152,13 +158,21 @@ function Lobby({ doc, api, me }) {
         <p>このコードを友達に伝えてください。</p>
         <div className="row">
           {[0, 1].map((t) => (
-            <div key={t}><b>チーム{'AB'[t]}{t ? '（後攻）' : '（先攻）'}</b>
-              <ul>{col(t).map((p) => <li key={p.id}>{p.name}{p.id === me ? '（あなた）' : ''}</li>)}{!col(t).length && <li className="mut">（AIが入ります）</li>}</ul>
+            <div key={t}><b>チーム{'AB'[t]}{t ? '（後攻）' : '（先攻）'}　{col(t).length}/4人</b>
+              <ul>
+                {col(t).map((p) => (
+                  <li key={p.id}>{p.name}{p.id === me ? '（あなた）' : ''}
+                    {host && <button className="sub mv" disabled={col(1 - t).length >= 4} onClick={() => api.setTeam(p.id, 1 - t)}>{t ? '← A' : 'B →'}</button>}
+                  </li>
+                ))}
+                {!col(t).length && <li className="mut">（AIが入ります）</li>}
+              </ul>
             </div>
           ))}
         </div>
-        <p className="mut">各チーム4人になるまで、足りない分はAIが入ります。</p>
-        {doc.host === me ? <button onClick={async () => { const fresh = (api.fetch && (await api.fetch())) || doc; const r = await api.start(buildGame(fresh)); if (r && r.error) alert('開始できませんでした：' + r.error.message) }}>試合開始（足りない分はAI）</button>
+        {host && <button className="sub" onClick={() => api.shuffle()}>🔀 ランダムにチーム分け</button>}
+        <p className="mut">{host ? '名前の横のボタンで、チームを移せます。' : 'チーム分けは、部屋を作った人が決めます。'}各チーム4人になるまで、足りない分はAIが入ります。</p>
+        {host ? <button onClick={start}>試合開始（足りない分はAI）</button>
           : <p className="mut">部屋を作った人が開始するのを待っています…</p>}
       </div>
       <Rules M={M} />
@@ -329,7 +343,7 @@ export default function App() {
   return (
     <main>
       <div className="hd">
-        <h1><span className="neon">BASEBALL</span><span className="neon2">× 計算バトル ⚾ </span></h1>
+        <h1><span className="neon">BASEBALL</span><span className="neon2">× 計算バトル ⚾ ナイトゲーム</span></h1>
         <div className="aud">
           <button className="ic" title="BGM" onClick={() => { unlock(); const v = !bgm; setBgm(v); setB(v) }}>{bgm ? '🎵' : '🔇'}</button>
           <button className="ic" title="効果音" onClick={() => { unlock(); const v = !se; setSe(v); setS(v) }}>{se ? '🔊' : '🔈'}</button>
