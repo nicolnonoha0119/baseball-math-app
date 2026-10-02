@@ -29,6 +29,16 @@ function remote(code) {
         .subscribe()
       return () => { alive = false; clearInterval(poll); supabase.removeChannel(ch) }
     },
+    // 部屋のオーナー用：チームの移動とランダムなチーム分け
+    setTeam: (id, team) => done(supabase.from('room_players').update({ team }).eq('room_code', code).eq('id', id)),
+    shuffle: async () => {
+      const d = await fetchDoc(code); if (!d) return
+      const ids = d.players.map((p) => p.id)
+      for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]] }
+      const off = Math.random() < 0.5 ? 0 : 1 // 人数が奇数のとき、多いほうのチームもランダムにする
+      await Promise.all(ids.map((id, i) => supabase.from('room_players').update({ team: (i + off) % 2 }).eq('room_code', code).eq('id', id)))
+      refresh()
+    },
     start: (s) => done(supabase.from('rooms').update({ s }).eq('code', code)),
     write: (s) => done(supabase.from('rooms').update({ s, hb: null, hd: null }).eq('code', code)),
     hand: (k, v) => done(supabase.from('rooms').update({ [k]: v }).eq('code', code)),
