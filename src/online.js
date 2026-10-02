@@ -39,6 +39,12 @@ function remote(code) {
       await Promise.all(ids.map((id, i) => supabase.from('room_players').update({ team: (i + off) % 2 }).eq('room_code', code).eq('id', id)))
       refresh()
     },
+    // 先攻（チームA）と後攻（チームB）の全員を入れ替える
+    swapTeams: async () => {
+      const d = await fetchDoc(code); if (!d) return
+      await Promise.all(d.players.map((p) => supabase.from('room_players').update({ team: 1 - p.team }).eq('room_code', code).eq('id', p.id)))
+      refresh()
+    },
     start: (s) => done(supabase.from('rooms').update({ s }).eq('code', code)),
     write: (s) => done(supabase.from('rooms').update({ s, hb: null, hd: null }).eq('code', code)),
     hand: (k, v) => done(supabase.from('rooms').update({ [k]: v }).eq('code', code)),
