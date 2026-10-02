@@ -594,6 +594,14 @@ export function gen(M, op, b) {
 }
 export const ansText = (pr) => (pr.ch ? pr.ch[pr.a] : pr.a)
 
+// コールドゲーム：点差がこの値以上になると試合終了（3イニング以上の試合のみ）
+// 9回制なら5回に10点差・7回以降は7点差、イニング数が少ない試合では回数に合わせて早めに適用
+export const coldMargin = (inn, N) => {
+  if (N < 3) return Infinity
+  const start = Math.max(2, Math.ceil((N * 5) / 9)), late = Math.ceil((N * 7) / 9)
+  return inn < start ? Infinity : inn >= late ? 7 : 10
+}
+
 export const cur = (S) => {
   const o = S.half, d = 1 - o
   return { o, d, bat: S.t[o].pl[S.bi[o] % S.t[o].pl.length], pit: S.t[d].pl[(S.inn - 1) % S.t[d].pl.length] }
@@ -631,6 +639,9 @@ export function resolve(S0, win, pre) {
     const r = adv(S, n); S.line[S.half][S.inn - 1] = (S.line[S.half][S.inn - 1] || 0) + r; m += `${bat}は${t}！` + (r ? `${r}点入った！` : ''); S.ev = t
   } else { S.outs++; m += `${bat}はアウト（${S.outs}アウト）`; S.ev = 'アウト' }
   S.bi[o]++; S.n++
+  const mg = coldMargin(S.inn, S.N), diff = S.sc[1] - S.sc[0]
+  if (S.half === 1 && diff >= mg) { S.cold = true; S.ph = 'end'; S.msg = m + '\n⚡ コールドゲーム成立！'; return S } // 裏の攻撃中に後攻が差を広げた
+  if (S.outs >= 3 && ((S.half === 0 && diff >= mg) || (S.half === 1 && Math.abs(diff) >= mg))) { S.cold = true; S.ph = 'end'; S.msg = m + '\n⚡ コールドゲーム成立！'; return S }
   if (S.outs >= 3) {
     S.outs = 0; S.bases = [0, 0, 0]; m += ' チェンジ！'; S.ev += '→チェンジ'
     if (S.half === 0) S.half = 1; else { S.half = 0; S.inn++ }
@@ -650,7 +661,9 @@ export function doRoll(S0) {
     c.pr = gen(S.M, p, b)
     const st = AIL[b], D = Math.ceil(b / 2), lv = S.lv || 2, eng = isMC(S.M)
     c.pc = Math.min(0.999, ACC[lv] + (st - 2) * 0.04)
-    c.aiT = (8 + 6 * D) * (eng ? 0.5 : 1) * TM[lv] * (1.3 - 0.15 * st) * (0.7 + 0.6 * Math.random())
+    const raw = (8 + 6 * D) * (eng ? 0.5 : 1) * TM[lv] * (1.3 - 0.15 * st) * (0.7 + 0.6 * Math.random())
+    // 人間が読んで入力する時間を確保する（どんなに強いAIでも、これより早くは答えない）
+    c.aiT = Math.max(eng ? 4 : 6 + 2 * D, raw) + 2
     const base = S.M === 'S' ? 30 + 15 * D : eng ? (S.M === 'G' ? 15 + 5 * D : 12 + 4 * D) : 25 + 10 * D
     c.lim = Math.round(Math.max(base, c.aiT + 6)); c.t0 = Date.now()
   }
