@@ -403,7 +403,7 @@ function xC(op, L) {
   if (op === 3 && L === 3) { const c1 = rd(2), c2 = rd(2), v = 100 * rd(2); return { q: `${c1}mol/L の塩酸 ${v}mL を中和するのに、${c2}mol/L の水酸化ナトリウム水溶液は何mL必要？`, a: (c1 * v) / c2, e: `H⁺の物質量＝OH⁻の物質量：${c1}×${v}＝${c2}×x より x＝${(c1 * v) / c2}mL` } }
 }
 const X = { S: xS, J: xJ, H: xH, III: x3, A: xA, CH: xC }
-const pick = (M, op, L, base) => { const v = Math.random() < 0.55 && X[M](op, L); return v || base(op, L) }
+const pick = (M, op, L, base) => { const r = Math.random(), v = (r < 0.4 && Y[M](op, L)) || (r >= 0.4 && r < 0.75 && X[M](op, L)); return v || base(op, L) }
 
 // ===== 語彙・文法・日本史の問題数を増やす =====
 WB.W3.push(...wb('allow:許す,arrive:到着する,believe:信じる,belong:所属する,bridge:橋,century:世紀,collect:集める,comfortable:快適な,communicate:意思疎通する,culture:文化,dangerous:危険な,describe:説明する,develop:発達させる,difficult:難しい,discuss:話し合う,educate:教育する,environment:環境,exchange:交換する,experience:経験,express:表現する,familiar:よく知られた,foreign:外国の,government:政府,graduate:卒業する,introduce:紹介する,invent:発明する,island:島,journey:旅,language:言語,local:地元の,manage:管理する,medicine:薬,message:伝言,nature:自然,necessary:必要な,opinion:意見,perform:演じる,prepare:準備する,produce:生産する,promise:約束する,recycle:再利用する,repair:修理する'))
@@ -578,11 +578,209 @@ JHB.push(
   [3, 3, '日本国憲法が公布された年は？', '1946年', '', 'y'], [3, 3, 'サンフランシスコ平和条約が結ばれた年は？', '1951年', '', 'y'],
   [3, 3, '日韓基本条約が結ばれた年は？', '1965年', '', 'y'], [3, 3, '沖縄が日本に復帰した年は？', '1972年', '', 'y'],
 )
+// ===== 第3弾：数学・化学の出題パターンを追加（問題の約4割がここから出ます）=====
+const pk = (a) => a[rd(a.length) - 1]
+const sub = (n) => String(n).replace(/\d/g, (c) => '₀₁₂₃₄₅₆₇₈₉'[c])
+const isPr = (n) => { if (n < 2) return false; for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true }
+const sgn = () => (rd(2) === 1 ? 1 : -1)
+
+// ---------- そろばん ----------
+function yS(op, d) {
+  if (op === 1) { const a = rnd(Math.max(d - 1, 1)), b = 1 + rd(8), c = 1 + rd(8); return { q: `${a} × ${b} × ${c}`, a: a * b * c, e: `${a}×${b}＝${a * b}、さらに×${c}＝${a * b * c}` } }
+  if (op === 2) { const n = 5 + d; let s = 0, q = ''; for (let i = 0; i < n; i++) { const x = rnd(d); s += x; q += (i ? ' ＋ ' : '') + x } return { q, a: s, e: `${n}個の数をすべて足して ${s}` } }
+  if (op === 3) { const dv = rnd(2), qt = rnd(Math.max(d, 2)); return { q: `${dv * qt} ÷ ${dv}`, a: qt, e: `${dv}×${qt}＝${dv * qt} なので答えは ${qt}` } }
+  if (op === 4) {
+    const hi = d === 2 ? 9 : 14, k = 2 + rd(hi), m = 2 + rd(hi)
+    return rd(2) === 1 ? { q: `√${k * k} ＋ √${m * m}`, a: k + m, e: `√${k * k}＝${k}、√${m * m}＝${m}。合計 ${k + m}` } : { q: `∛${k ** 3} ＋ ∛${m ** 3}`, a: k + m, e: `∛${k ** 3}＝${k}、∛${m ** 3}＝${m}。合計 ${k + m}` }
+  }
+  if (rd(2) === 1) { const t = rd(9), n = 10 * t + 5; return { q: `${n}²`, a: n * n, e: `末尾が5の2乗：${t}×${t + 1}＝${t * (t + 1)} の後ろに25をつけて ${n * n}` } }
+  const k = 10 + rd(20), m = rd(9) + 1; return { q: `${k}² － ${m}²`, a: k * k - m * m, e: `和と差の積：(${k}＋${m})(${k}－${m})＝${k + m}×${k - m}＝${k * k - m * m}` }
+}
+// ---------- 中学数学 ----------
+function yJ(op) {
+  if (op === 1) {
+    const v = rd(3)
+    if (v === 1) { const a = rd(9) + 1, b = rd(9) + 1, c = rd(9) + 1, d = rd(9) + 1; return { q: `|${a} － ${b}| ＋ |${c} － ${d}|`, a: Math.abs(a - b) + Math.abs(c - d), e: `絶対値は距離：${Math.abs(a - b)}＋${Math.abs(c - d)}＝${Math.abs(a - b) + Math.abs(c - d)}` } }
+    if (v === 2) { const a = rd(4) + 1, b = rd(9) + 1; return { q: `(－${a})³ ＋ ${b}²`, a: -(a ** 3) + b * b, e: `(－${a})³＝${-(a ** 3)}、${b}²＝${b * b}。合計 ${-(a ** 3) + b * b}` } }
+    const a = rd(20), b = rd(9), c = rd(9), d = rd(9); return { q: `${a} － ${b} × (${c} － ${d})`, a: a - b * (c - d), e: `かっこの中：${c}－${d}＝${c - d}。${b}×(${c - d})＝${b * (c - d)}。${a}－(${b * (c - d)})＝${a - b * (c - d)}` }
+  }
+  if (op === 2) {
+    const v = rd(3)
+    if (v === 1) { const k = rd(6), a = rd(5) + 1, b = rd(9); return { q: `x ÷ ${a} ＋ ${b} ＝ ${k + b}`, a: a * k, e: `x÷${a}＝${k}、x＝${a * k}` } }
+    if (v === 2) { const m = rd(20); return { q: `連続する3つの整数の和が ${3 * m + 3} のとき、いちばん小さい整数は？`, a: m, e: `真ん中の数は ${3 * m + 3}÷3＝${m + 1}。最小は ${m}` } }
+    const p = rd(9) * 10, x = rd(9), q = rd(5) * 10; return { q: `1個${p}円のりんごを x 個買い、${q}円の箱に入れたら合計 ${p * x + q} 円だった。x は？`, a: x, e: `${p * x + q}－${q}＝${p * x}円がりんご代。${p * x}÷${p}＝${x}個` }
+  }
+  if (op === 3) {
+    const v = rd(3)
+    if (v === 1) { const x = rd(9) + 1, y = rd(9); return { q: `x ＋ y ＝ ${x + y}、x － y ＝ ${x - y} のとき xy の値`, a: x * y, e: `2式を足して 2x＝${2 * x}、x＝${x}。y＝${y}。xy＝${x * y}` } }
+    if (v === 2) { const k = rd(4) + 1, x = rd(9); return { q: `y ＝ ${k}x、x ＋ y ＝ ${(k + 1) * x} のとき y の値`, a: k * x, e: `代入して x＋${k}x＝${(k + 1) * x}、x＝${x}。y＝${k * x}` } }
+    let a, b, c, d; const n = rd(9) * 20, p = rd(9) * 10
+    do { a = rd(4); b = rd(4); c = rd(4); d = rd(4) } while (a * d - b * c === 0)
+    return { q: `ノート${a}冊と鉛筆${b}本で ${a * n + b * p} 円、ノート${c}冊と鉛筆${d}本で ${c * n + d * p} 円。ノート1冊は何円？`, a: n, e: `ノートをx円、鉛筆をy円として連立。加減法で x＝${n}（y＝${p}）` }
+  }
+  if (op === 4) {
+    const v = rd(3)
+    if (v === 1) { const a = sgn() * rd(9), b = sgn() * rd(9); if (!a || !b) return yJ(4); return { q: `(x ${sg(a)})(x ${sg(b)}) を展開したときの x の係数`, a: a + b, e: `x²＋(${a}＋${b})x＋${a * b}。係数は ${a + b}` } }
+    if (v === 2) {
+      let m, n; do { m = rd(19) - 10; n = rd(19) - 10 } while (!m || !n || m >= n || m + n === 0)
+      return { q: `x² ${sg(m + n, 'x')} ${sg(m * n)} ＝ (x ＋ m)(x ＋ n)（m＜n）と因数分解できるとき n の値`, a: n, e: `和が ${m + n}、積が ${m * n} になる2数は ${m} と ${n}。大きい方は ${n}` }
+    }
+    const r = rd(10), d = rd(8); return { q: `長方形で、横は縦より ${d}cm 長く、面積は ${r * (r + d)}cm²。横の長さは何cm？`, a: r + d, e: `縦を x として x(x＋${d})＝${r * (r + d)}、x＝${r}。横は ${r + d}` }
+  }
+  const v = rd(3)
+  if (v === 1) { const k = rd(9), n = k * k + rd(2 * k); return { q: `√${n} の整数部分`, a: k, e: `${k}²＝${k * k}＜${n}＜${(k + 1) ** 2}＝${(k + 1) ** 2} なので整数部分は ${k}` } }
+  if (v === 2) { const m = pk([2, 3, 5, 6, 7]), p = rd(6), q = rd(6); return { q: `√${p * p * m} ＋ √${q * q * m} ＝ □√${m} のとき □ の値`, a: p + q, e: `${p}√${m}＋${q}√${m}＝${p + q}√${m}` } }
+  const m = rd(5) + 1, k = rd(4) + 1; return { q: `(√${m} ＋ √${m * k * k})²`, a: m * (1 + k) ** 2, e: `√${m * k * k}＝${k}√${m}。(√${m}＋${k}√${m})²＝(${1 + k}√${m})²＝${(1 + k) ** 2}×${m}＝${m * (1 + k) ** 2}` }
+}
+// ---------- 高校数学 ----------
+function yH(op) {
+  if (op === 1) {
+    const v = rd(3)
+    if (v === 1) { let r1, r2; do { r1 = rd(10) - 5; r2 = r1 + rd(8) } while (!r1 || !r2 || r1 + r2 === 0); return { q: `y ＝ x² ${sg(-(r1 + r2), 'x')} ${sg(r1 * r2)} が x軸と交わる2点の間の距離`, a: r2 - r1, e: `因数分解して (x ${sg(-r1)})(x ${sg(-r2)})＝0。交点は x＝${r1}, ${r2}。距離 ${r2 - r1}` } }
+    if (v === 2) { const k = sgn() * rd(9); return { q: `x² ${sg(-2 * k, 'x')} ＋ c ＝ 0 が重解をもつときの c の値`, a: k * k, e: `重解 ⇔ 判別式 D＝0。(${-2 * k})²－4c＝0 より c＝${k * k}` } }
+    const h = sgn() * rd(8), c = rd(20); return { q: `y ＝ x² ${sg(-2 * h, 'x')} ${sg(c)} の頂点の y 座標`, a: c - h * h, e: `平方完成：y＝(x ${sg(-h)})²＋(${c - h * h})。頂点の y 座標は ${c - h * h}` }
+  }
+  if (op === 2) {
+    const v = rd(3)
+    if (v === 1) {
+      const q = pk([2, 3, 4]), k = 2 + rd({ 2: 8, 3: 4, 4: 2 }[q]) - 1, p = pk({ 2: [1, 3], 3: [1, 2, 4], 4: [1, 3] }[q])
+      return { q: `${k ** q}^(${p}/${q}) の値`, a: k ** p, e: `${k ** q}＝${k}^${q} なので (${k}^${q})^(${p}/${q})＝${k}^${p}＝${k ** p}` }
+    }
+    if (v === 2) {
+      if (rd(2) === 1) { const a = rd(8) + 2, b = rd(a - 1); return { q: `log₂ ${2 ** a} － log₂ ${2 ** b}`, a: a - b, e: `log₂ 2^${a}＝${a}、log₂ 2^${b}＝${b}。差は ${a - b}` } }
+      const a = rd(4) + 1, b = rd(3) + 1; return { q: `log₂ ${2 ** a} × log₅ ${5 ** b}`, a: a * b, e: `log₂ 2^${a}＝${a}、log₅ 5^${b}＝${b}。積は ${a * b}` }
+    }
+    const a = rd(6); return { q: `log₁₀ ${2 ** a} ＋ log₁₀ ${5 ** a}`, a, e: `和は積の対数：log₁₀ (2^${a}×5^${a})＝log₁₀ 10^${a}＝${a}` }
+  }
+  if (op === 3) {
+    const v = rd(3)
+    if (v === 1) {
+      const [a, b, h] = pk([[15, 75, 0], [20, 70, 0], [40, 50, 0], [10, 20, 1], [5, 25, 1], [100, 50, 1]]), m = h ? 2 * rd(5) : rd(9)
+      return { q: `${m}(sin${a}°cos${b}° ＋ cos${a}°sin${b}°)`, a: h ? m / 2 : m, e: `加法定理：sin(${a}°＋${b}°)＝sin${a + b}°＝${h ? '1/2' : '1'}。${m}倍して ${h ? m / 2 : m}` }
+    }
+    if (v === 2) {
+      const n = pk([2, 4]), j = rd(4), r = n * j
+      return rd(2) === 1 ? { q: `半径${r}・中心角 π/${n} の扇形の弧の長さは □π のとき □ の値`, a: j, e: `弧の長さ＝rθ＝${r}×π/${n}＝${j}π` } : { q: `半径${r}・中心角 π/${n} の扇形の面積は □π のとき □ の値`, a: (r * r) / (2 * n), e: `面積＝(1/2)r²θ＝(1/2)×${r * r}×π/${n}＝${(r * r) / (2 * n)}π` }
+    }
+    const a = rd(8), b = rd(8), A = pk([60, 120]), r = A === 60 ? a * a + b * b - a * b : a * a + b * b + a * b
+    return { q: `AB＝${a}、AC＝${b}、∠A＝${A}° の三角形で BC²`, a: r, e: `余弦定理：BC²＝${a}²＋${b}²－2×${a}×${b}×cos${A}°＝${r}` }
+  }
+  if (op === 4) {
+    const v = rd(3)
+    if (v === 1) { const k = rd(4), a = rd(5), b = rd(5); return { q: `∫₀^${k} (${3 * a}x² ＋ ${2 * b}x) dx`, a: a * k ** 3 + b * k * k, e: `[${a}x³＋${b}x²]₀^${k}＝${a * k ** 3}＋${b * k * k}＝${a * k ** 3 + b * k * k}` } }
+    if (v === 2) { const m = rd(4), c = rd(10); return { q: `f(x)＝x³ － ${3 * m * m}x ＋ ${c} の極大値`, a: 2 * m ** 3 + c, e: `f′(x)＝3x²－${3 * m * m}＝0 より x＝±${m}。x＝－${m} で極大。f(－${m})＝${2 * m ** 3}＋${c}＝${2 * m ** 3 + c}` } }
+    const k = pk([6, 12]); return { q: `放物線 y＝x² と直線 y＝${k}x で囲まれた部分の面積`, a: k ** 3 / 6, e: `交点は x＝0, ${k}。∫₀^${k}(${k}x－x²)dx＝[${k}x²/2－x³/3]＝${k ** 3 / 2}－${k ** 3 / 3}＝${k ** 3 / 6}` }
+  }
+  const v = rd(4)
+  if (v === 1) { const a = rd(4), r = rd(3) + 1, n = rd(4) + 2; return { q: `a₁＝${a}、a${sub('n+1')}＝${r}a${sub('n')} のとき a${sub(n)}`, a: a * r ** (n - 1), e: `公比${r}の等比数列。a${sub(n)}＝${a}×${r}^${n - 1}＝${a * r ** (n - 1)}` } }
+  if (v === 2) { const a = rd(9), n = rd(8) + 3; return { q: `a₁＝${a}、a${sub('n+1')}＝a${sub('n')} ＋ n のとき a${sub(n)}`, a: a + (n * (n - 1)) / 2, e: `階差数列は 1, 2, …, ${n - 1}。a${sub(n)}＝${a}＋${n - 1}×${n}/2＝${a + (n * (n - 1)) / 2}` } }
+  if (v === 3) { const a = rd(10), d = rd(5), p = rd(3), q = p + rd(4), r = q + rd(5); return { q: `等差数列で、第${p}項が ${a + (p - 1) * d}、第${q}項が ${a + (q - 1) * d} のとき、第${r}項は？`, a: a + (r - 1) * d, e: `公差＝(${a + (q - 1) * d}－${a + (p - 1) * d})÷${q - p}＝${d}。第${r}項＝${a + (r - 1) * d}` } }
+  const n = rd(9) + 1; return { q: `Σ(k＝1→${n}) (2k － 1)`, a: n * n, e: `奇数の和は n²。${n}²＝${n * n}` }
+}
+// ---------- 数学III ----------
+function y3(op) {
+  if (op === 1) {
+    const v = rd(4)
+    if (v === 1) { const k = rd(9); return { q: `lim(x→∞) (√(x² ＋ ${2 * k}x) － x)`, a: k, e: `有理化して ${2 * k}x÷(√(x²＋${2 * k}x)＋x)。x で割って ${2 * k}/(1＋1)＝${k}` } }
+    if (v === 2) { const a = rd(5) + 1; return { q: `lim(x→${a}) (x³ － ${a ** 3}) ÷ (x － ${a})`, a: 3 * a * a, e: `x³－${a ** 3}＝(x－${a})(x²＋${a}x＋${a * a})。約分して x→${a} で 3×${a}²＝${3 * a * a}` } }
+    if (v === 3) { const k = rd(9); return { q: `lim(x→0) tan(${k}x) ÷ x`, a: k, e: `tan t／t→1。t＝${k}x として ${k}` } }
+    const q = rd(4), j = rd(4) + 1; return { q: `lim(x→0) sin(${q * j}x) ÷ sin(${q}x)`, a: j, e: `分子分母を x で割ると (${q * j}・1)/(${q}・1)＝${j}` }
+  }
+  if (op === 2) {
+    const v = rd(3)
+    if (v === 1) { const a = rd(6); return { q: `f(x)＝${a}e^x sin x のとき f′(0)`, a, e: `積の微分：f′(x)＝${a}e^x(sin x＋cos x)。x＝0 で ${a}` } }
+    if (v === 2) { const a = rd(6); return { q: `f(x)＝${a}x ln x のとき f′(e)`, a: 2 * a, e: `f′(x)＝${a}(ln x＋1)。x＝e で ${a}×2＝${2 * a}` } }
+    const a = rd(4), k = rd(5); return { q: `f(x)＝${a * k}x ÷ (x ＋ ${a}) のとき f′(0)`, a: k, e: `商の微分：f′(x)＝${a * k}・${a}/(x＋${a})²。x＝0 で ${a * k * a}/${a * a}＝${k}` }
+  }
+  if (op === 3) {
+    const v = rd(3)
+    if (v === 1) { const k = rd(5); return { q: `∫₀^(π/2) ${2 * k} sin x cos x dx`, a: k, e: `sin x＝t と置換。${2 * k}∫₀¹ t dt＝${2 * k}×1/2＝${k}` } }
+    if (v === 2) { const j = rd(4); return { q: `∫₀¹ ${6 * j} x (x² ＋ 1)² dx`, a: 7 * j, e: `x²＋1＝t と置換。${6 * j}・(1/2)∫₁² t² dt＝${3 * j}×7/3＝${7 * j}` } }
+    const j = rd(5); return { q: `∫₁^e ${2 * j} (ln x) ÷ x dx`, a: j, e: `ln x＝t と置換。${2 * j}∫₀¹ t dt＝${2 * j}×1/2＝${j}` }
+  }
+  if (op === 4) {
+    const v = rd(3), a = rd(6)
+    if (v === 1) return { q: `Σ(n＝1→∞) ${a} ÷ {n(n ＋ 1)}`, a, e: `1/(n(n＋1))＝1/n－1/(n＋1)。和は 1 になるので ${a}` }
+    if (v === 2) return { q: `初項${a}・公比 2/3 の無限等比級数の和`, a: 3 * a, e: `a/(1－r)＝${a}/(1/3)＝${3 * a}` }
+    return { q: `Σ(n＝1→∞) ${a}(2/3)^n`, a: 2 * a, e: `初項 ${2 * a}/3・公比 2/3。(${2 * a}/3)/(1/3)＝${2 * a}` }
+  }
+  const v = rd(3)
+  if (v === 1) { const k = rd(3); return { q: `(1 ＋ √3 i)^${3 * k} の値`, a: (-8) ** k, e: `1＋√3 i＝2(cos60°＋i sin60°)。${3 * k}乗で 2^${3 * k}(cos${180 * k}°)＝${(-8) ** k}` } }
+  if (v === 2) { const [s, t] = pk([['1 ＋ i', 45], ['√3 ＋ i', 30], ['1 ＋ √3 i', 60], ['－1 ＋ i', 135], ['－1 － i', 225], ['1 － i', 315], ['－√3 ＋ i', 150], ['－1 ＋ √3 i', 120]]); return { q: `z＝${s} の偏角 θ（0°≦θ＜360°）は何度？`, a: t, e: `複素数平面に図示して、偏角は ${t}°` } }
+  const a = rd(9), b = rd(9); return rd(2) === 1 ? { q: `(${a} ＋ ${b}i)² の虚部`, a: 2 * a * b, e: `展開：${a * a}＋${2 * a * b}i＋${b * b}i²。虚部は ${2 * a * b}` } : { q: `(${a} ＋ ${b}i)² の実部`, a: a * a - b * b, e: `展開：${a * a}＋${2 * a * b}i－${b * b}。実部は ${a * a - b * b}` }
+}
+// ---------- 数学A ----------
+function yA(op) {
+  if (op === 1) {
+    const v = rd(4)
+    if (v === 1) { const m = rd(4) + 3, w = rd(5) + 2; return { q: `男子${m}人・女子${w}人から、男子2人と女子1人を選ぶ選び方は何通り？`, a: Cm(m, 2) * w, e: `${m}C2×${w}C1＝${Cm(m, 2)}×${w}＝${Cm(m, 2) * w}` } }
+    if (v === 2) { const n = rd(8) + 3; return { q: `${n}人から委員長と副委員長を1人ずつ選ぶ選び方は何通り？`, a: Pm(n, 2), e: `役が区別されるので ${n}P2＝${n}×${n - 1}＝${Pm(n, 2)}` } }
+    if (v === 3) { let n, r; do { n = rd(8) + 5; r = rd(4) } while (2 * r === n); return { q: `${n}C${r} ＝ ${n}C□ のとき □ の値（□≠${r}）`, a: n - r, e: `nCr＝nC(n－r) なので □＝${n}－${r}＝${n - r}` } }
+    const m = rd(3) + 3, w = rd(3) + 1; return { q: `男子${m}人・女子${w}人から3人を選ぶとき、少なくとも1人は女子を含む選び方は何通り？`, a: Cm(m + w, 3) - Cm(m, 3), e: `全体 ${m + w}C3＝${Cm(m + w, 3)} から男子だけ ${m}C3＝${Cm(m, 3)} を引く。${Cm(m + w, 3) - Cm(m, 3)}` }
+  }
+  if (op === 2) {
+    const v = rd(3)
+    if (v === 1) { const n = rd(3) + 3; return { q: `異なる${n}個の玉でつくる首飾り（裏返しも同じ）は何通り？`, a: fa(n - 1) / 2, e: `じゅず順列：(n－1)!÷2＝${fa(n - 1)}÷2＝${fa(n - 1) / 2}` } }
+    if (v === 2) { const k = rd(4) + 2, n = rd(3) + 1; return { q: `1〜${k}の数字を重複を許して使ってつくる${n}桁の整数は何個？`, a: k ** n, e: `各桁${k}通りなので ${k}^${n}＝${k ** n}` } }
+    const n = rd(2) + 2; return { q: `男子${n}人・女子${n}人が円卓に交互に座る座り方は何通り？`, a: fa(n - 1) * fa(n), e: `男子の円順列 ${n - 1}!＝${fa(n - 1)}。間に女子を並べる ${n}!＝${fa(n)}。積 ${fa(n - 1) * fa(n)}` }
+  }
+  if (op === 3) {
+    const v = rd(3)
+    if (v === 1) { const [n, a, r] = pk([[6, 3, 10], [4, 2, 3], [8, 4, 35], [6, 2, 15]]); return { q: `${n}人を ${a}人ずつの組に分ける分け方は何通り？（組の区別はない）`, a: r, e: `区別をつけて数えてから、組を入れかえた分の重複で割る。${r}通り` } }
+    if (v === 2) { const n = rd(5) + 4, a = rd(3) + 1; return { q: `${n}人を A室に${a}人、B室に${n - a}人入れる分け方は何通り？`, a: Cm(n, a), e: `A室に入る${a}人を選ぶ：${n}C${a}＝${Cm(n, a)}` } }
+    const a = rd(3) + 3, b = rd(3) + 3, c = rd(a - 1), d = rd(b - 1)
+    return { q: `格子状の道を(0,0)から(${a},${b})まで最短で進む。点(${c},${d})を通る道順は何通り？`, a: Cm(c + d, c) * Cm(a - c + b - d, a - c), e: `(0,0)→(${c},${d})：${Cm(c + d, c)}通り、(${c},${d})→(${a},${b})：${Cm(a - c + b - d, a - c)}通り。積 ${Cm(c + d, c) * Cm(a - c + b - d, a - c)}` }
+  }
+  if (op === 4) {
+    const v = rd(3)
+    if (v === 1) { const n = rd(40) + 10; return { q: `${n}! を計算したとき、末尾に並ぶ0の個数`, a: Math.floor(n / 5) + Math.floor(n / 25), e: `5の倍数が ${Math.floor(n / 5)}個、25の倍数が ${Math.floor(n / 25)}個。合計 ${Math.floor(n / 5) + Math.floor(n / 25)}` } }
+    if (v === 2) { const N = pk([20, 30, 40, 50]); let c = 0; for (let i = 2; i <= N; i++) if (isPr(i)) c++; return { q: `${N}以下の素数は全部で何個？`, a: c, e: `${N}以下の素数を順に数えて ${c}個` } }
+    const N = pk([30, 45, 60, 90, 150]), r = N - Math.floor(N / 3) - Math.floor(N / 5) + Math.floor(N / 15)
+    return { q: `1から${N}までの整数のうち、3でも5でも割り切れない数は何個？`, a: r, e: `${N}－(3の倍数 ${Math.floor(N / 3)})－(5の倍数 ${Math.floor(N / 5)})＋(15の倍数 ${Math.floor(N / 15)})＝${r}` }
+  }
+  const v = rd(3)
+  if (v === 1) { const t = rd(5) + 7; let c = 0; for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) if (a + b >= t) c++; return { q: `大小2個のさいころを投げて、目の和が${t}以上になる場合は何通り？`, a: c, e: `36通りのうち、和が${t}以上になる組を数えて ${c}通り` } }
+  if (v === 2) { const k = pk([4, 5, 6, 8, 9, 12]); let c = 0; for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) if ((a * b) % k === 0) c++; return { q: `大小2個のさいころを投げて、目の積が${k}の倍数になる場合は何通り？`, a: c, e: `36通りのうち、積が${k}の倍数になる組を数えて ${c}通り` } }
+  const r = rd(3) + 1, w = rd(3) + 3; return { q: `赤玉${r}個・白玉${w}個から3個を同時に取り出すとき、少なくとも1個は赤玉である取り出し方は何通り？`, a: Cm(r + w, 3) - Cm(w, 3), e: `全体 ${r + w}C3＝${Cm(r + w, 3)} から白玉だけ ${w}C3＝${Cm(w, 3)} を引く。${Cm(r + w, 3) - Cm(w, 3)}` }
+}
+// ---------- 化学計算 ----------
+function yC(op) {
+  if (op === 1) {
+    if (rd(2) === 1) { const [f, n] = pk([['H₂O', 3], ['CO₂', 3], ['NH₃', 4], ['CH₄', 5], ['O₂', 2]]), k = rd(5); return { q: `${k}mol の ${f} に含まれる原子の総数は、アボガドロ定数(6.0×10²³)の何倍？`, a: k * n, e: `分子 ${k}mol。1分子に原子が${n}個なので ${k}×${n}＝${k * n}倍` } }
+    const k = rd(4); return { q: `${(6 * k).toFixed(1)}×10²³ 個の H₂O 分子（分子量18）の質量は何g？`, a: 18 * k, e: `6.0×10²³個＝1mol。${k}mol なので 18×${k}＝${18 * k}g` }
+  }
+  if (op === 2) {
+    const v = rd(3)
+    if (v === 1) { const p1 = pk([100, 200, 400]); let p2; do { p2 = pk([100, 200, 400]) } while (p2 === p1); const v1 = 4 * rd(5); return { q: `温度一定で、${p1}kPa で ${v1}L の気体を ${p2}kPa にすると、体積は何L？`, a: (p1 * v1) / p2, e: `ボイルの法則 P₁V₁＝P₂V₂：V₂＝${p1}×${v1}÷${p2}＝${(p1 * v1) / p2}L` } }
+    if (v === 2) { const [t, T] = pk([[127, 400], [327, 600]]), k = rd(5); return { q: `圧力一定で、27℃ のとき ${3 * k}L の気体を ${t}℃ にすると、体積は何L？`, a: (k * T) / 100, e: `シャルルの法則：絶対温度 300K→${T}K。V₂＝${3 * k}×${T}/300＝${(k * T) / 100}L` } }
+    const j = rd(3), a = rd(4), b = 5 * j - a; return { q: `標準状態で、H₂ ${a}mol と O₂ ${b}mol の混合気体の体積は何L？`, a: 112 * j, e: `全体で ${5 * j}mol。${5 * j}×22.4＝${112 * j}L` }
+  }
+  if (op === 3) {
+    const v = rd(3)
+    if (v === 1) { const c = 4 * rd(3), w = pk([100, 200, 250, 500]), f = pk([2, 4]); return { q: `${c}mol/L の水溶液 ${w}mL に水を加えて全体を ${w * f}mL にした。モル濃度は何mol/L？`, a: c / f, e: `溶質の物質量は変わらず、体積が${f}倍になるので ${c}÷${f}＝${c / f}mol/L` } }
+    if (v === 2) { const c = rd(4), w = pk([250, 500, 1000]); return { q: `${c}mol/L の NaOH 水溶液 ${w}mL をつくるのに必要な NaOH（式量40）は何g？`, a: (c * w * 40) / 1000, e: `物質量＝${c}×${w / 1000}＝${(c * w) / 1000}mol。質量＝${(c * w) / 1000}×40＝${(c * w * 40) / 1000}g` } }
+    const p = 4 * rd(5); return { q: `密度 1.0g/mL の ${p}％ NaOH 水溶液（式量40）のモル濃度は何mol/L？`, a: p / 4, e: `1L＝1000g に NaOH が ${10 * p}g。${10 * p}÷40＝${p / 4}mol/L` }
+  }
+  if (op === 4) {
+    const v = rd(4)
+    if (v === 1) { const k = rd(5); return { q: `C ＋ O₂ → CO₂　炭素（原子量12）${12 * k}g から生じる CO₂（分子量44）は何g？`, a: 44 * k, e: `炭素 ${k}mol → CO₂ ${k}mol。44×${k}＝${44 * k}g` } }
+    if (v === 2) { const k = rd(5); return { q: `2H₂ ＋ O₂ → 2H₂O　水素（分子量2）${2 * k}g が完全に反応すると、生じる水（分子量18）は何g？`, a: 18 * k, e: `H₂ ${k}mol → H₂O ${k}mol。18×${k}＝${18 * k}g` } }
+    if (v === 3) { const j = rd(3); return { q: `CaCO₃ → CaO ＋ CO₂　CaCO₃（式量100）${500 * j}g を熱分解すると、標準状態で CO₂ は何L？`, a: 112 * j, e: `CaCO₃ ${5 * j}mol → CO₂ ${5 * j}mol。${5 * j}×22.4＝${112 * j}L` } }
+    const b = rd(4); let a = rd(8); if (a === 2 * b) a++
+    return { q: `2H₂ ＋ O₂ → 2H₂O　H₂ ${a}mol と O₂ ${b}mol から生じる H₂O は最大で何mol？`, a: Math.min(a, 2 * b), e: `H₂は ${a}mol、O₂からは最大 ${2 * b}mol 分の水。少ない方で決まるので ${Math.min(a, 2 * b)}mol` }
+  }
+  const v = rd(3)
+  if (v === 1) { const p1 = 5 * rd(6), p2 = p1 + 10 * rd(3), m = 100 * rd(3); return { q: `${p1}％の食塩水 ${m}g と ${p2}％の食塩水 ${m}g を混ぜたときの濃度は何％？`, a: (p1 + p2) / 2, e: `同じ質量なので平均：(${p1}＋${p2})÷2＝${(p1 + p2) / 2}％` } }
+  if (v === 2) { const p = pk([10, 20, 30]), [n, d] = pk([[1, 2], [3, 5]]), m = 100 * rd(3), x = (m * n) / d; return { q: `${p}％の食塩水 ${m}g から水を ${x}g 蒸発させると、濃度は何％？`, a: (p * m) / (m - x), e: `食塩は ${(p * m) / 100}g のまま、全体が ${m - x}g。${(p * m) / 100}÷${m - x}×100＝${(p * m) / (m - x)}％` } }
+  const t = rd(5); return { q: `水 ${40 * t}g に食塩を何g溶かすと、20％の食塩水になる？`, a: 10 * t, e: `食塩を x g として x÷(${40 * t}＋x)＝0.2。x＝${10 * t}g` }
+}
+const Y = { S: yS, J: yJ, H: yH, III: y3, A: yA, CH: yC }
+
 export function gen(M, op, b) {
   const sx = SUBJ[M]
   if (sx && sx.pool) { const [m, o] = sx.pool[op - 1]; return gen(m, o, Math.min(6, b + sx.shift)) }
   const L = Math.ceil(b / 2)
-  if (M === 'S') { const o = op === 6 ? rd(5) : op; return o === 5 ? xS(5, L + 1) : pick('S', o, L + 1, genS) }
+  if (M === 'S') { const o = op === 6 ? rd(5) : op; return o === 5 ? ((Math.random() < 0.5 && yS(5, L + 1)) || xS(5, L + 1)) : pick('S', o, L + 1, genS) }
   if (M === 'J') return pick(M, op === 6 ? rd(5) : op, L, genJ)
   if (M === 'H') return pick(M, op === 6 ? rd(5) : op, L, genH)
   if (M === 'III') return pick(M, op === 6 ? rd(5) : op, L, gen3)
